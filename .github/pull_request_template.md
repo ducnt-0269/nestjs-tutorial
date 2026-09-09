@@ -1,6 +1,6 @@
 ## Summary
 
-<!-- What this PR delivers and which milestone in docs/project-roadmap.md it belongs to.
+<!-- What this PR delivers, and the issue it closes: "Closes #N".
      Two or three sentences, written for someone who has not read the code. -->
 
 ## Evidence
@@ -26,5 +26,5 @@
 
 ## Deferred
 
-<!-- What was deliberately left out and which milestone it lands in, so an
+<!-- What was deliberately left out and which issue it lands in, so an
      intentional omission is not reported as a defect. -->
