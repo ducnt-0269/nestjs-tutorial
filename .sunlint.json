@@ -1,0 +1,13 @@
+{
+  "extends": "@sun/sunlint/recommended",
+  "input": [
+    "src"
+  ],
+  "exclude": [
+    "**/*.spec.ts",
+    "**/*.e2e-spec.ts",
+    "dist/**",
+    "node_modules/**",
+    "src/generated/**"
+  ]
+}
