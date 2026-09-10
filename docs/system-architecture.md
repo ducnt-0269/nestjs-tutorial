@@ -120,9 +120,9 @@ nào — nó công bố interface, module owner tự register vào (§6.5).
 
 ---
 
-## 4. Data model · `PLANNED`
+## 4. Data model · `PARTIAL`
 
-Chưa có model nào. Field, type và constraint thuộc về `prisma/schema.prisma`.
+Mới có `User`. Field, type và constraint thuộc về `prisma/schema.prisma`.
 
 ```mermaid
 erDiagram
@@ -150,6 +150,31 @@ erDiagram
 **Avatar:** `Attachment` là source of truth, `User.image` giữ URL derived để đọc profile khỏi join.
 Ngoại lệ có chủ đích: `PUT /user` được ghi thẳng `User.image` vì spec cho phép client gửi URL
 bất kỳ. Mọi path khác đi qua upload service.
+
+### Đặt tên
+
+Prisma và database dùng hai convention khác nhau, nối bằng `@map` / `@@map`:
+
+| | Convention | Ví dụ |
+|---|---|---|
+| Model, field trong Prisma | singular PascalCase, field camelCase | `model User`, `createdAt` |
+| Table, column trong Postgres | plural snake_case | `users`, `created_at` |
+
+Đây là khuyến nghị của chính Prisma. Lý do phía Postgres: identifier không quote luôn bị fold
+về chữ thường, nên table `User` bắt buộc phải viết `SELECT * FROM "User"` mới chạy — chọn
+`users` thì không bao giờ phải quote.
+
+Prisma đặt tên index theo **tên table đã map**, nên constraint sinh ra là `users_email_key`
+chứ không phải `User_email_key`.
+
+### Timestamp
+
+Mọi model mang `createdAt` và `updatedAt`, kiểu `@db.Timestamptz(3)`. Mặc định của Prisma là
+`timestamp(3)` **không** timezone, trong khi response RealWorld là ISO8601 có offset — khai
+thiếu là đổi timezone server thì giờ lệch.
+
+`@updatedAt` do Prisma Client set lúc `update()`, không phải trigger database. Cột là
+`NOT NULL` không `DEFAULT`, nên `INSERT` bằng SQL thô sẽ lỗi nếu không tự truyền giá trị.
 
 ---
 

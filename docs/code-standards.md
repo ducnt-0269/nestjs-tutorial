@@ -57,6 +57,8 @@ nên yêu cầu "0 error" là khả thi.
 - Zod schema đặt hậu tố **`.schema.ts`**, không phải `.dto.ts` — không có DTO class nào
   (`system-architecture.md` §6.6). Type dùng ở service lấy bằng `z.infer`, khai cùng file
   với schema
+- Table và column trong Postgres **snake_case số nhiều**, model và field trong Prisma giữ
+  PascalCase/camelCase, nối bằng `@map` / `@@map`. Lý do ở `system-architecture.md` §4
 - Mỗi file **dưới 200 dòng**. Vượt thì tách theo trách nhiệm, không tách cho đủ số
 - Một module một thư mục, nội dung module không rò rỉ ra ngoài qua import chéo —
   ranh giới phụ thuộc quy định ở `system-architecture.md` §3
