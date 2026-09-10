@@ -27,7 +27,7 @@ curl localhost:3000/api/hello                              # {"message":"Hello, 
 curl -H 'Accept-Language: vi' localhost:3000/api/hello      # {"message":"Xin chào!"}
 ```
 
-Swagger UI: <http://localhost:3000/api/docs>
+API docs (Scalar): <http://localhost:3000/api/docs>
 
 ## Lệnh
 

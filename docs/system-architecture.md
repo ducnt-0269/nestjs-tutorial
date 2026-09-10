@@ -5,7 +5,7 @@ API cho nền tảng xuất bản bài viết, triển khai theo
 Ứng dụng NestJS monolithic, PostgreSQL làm primary data source, Redis giữ state ngắn hạn.
 
 > **Tài liệu này vẽ hình dạng và ghi lý do. Không chứa chi tiết implementation.**
-> Field và data type → `prisma/schema.prisma`. Request/response contract → Swagger
+> Field và data type → `prisma/schema.prisma`. Request/response contract → API docs
 > `/api/docs`. Scope từng milestone → GitHub issues.
 >
 > Mục đánh dấu **`PLANNED`** mô tả phần chưa tồn tại. Hiện chỉ milestone 1 đã build.
@@ -25,7 +25,7 @@ API cho nền tảng xuất bản bài viết, triển khai theo
 | Validation | class-validator + class-transformer | Chuẩn của NestJS `ValidationPipe` |
 | Authentication | `@nestjs/jwt` + `passport-jwt` | |
 | Password hashing | bcrypt | |
-| API docs | `@nestjs/swagger` | |
+| API docs | `@nestjs/swagger` sinh OpenAPI document, Scalar render | Swagger UI không dùng |
 | i18n | `nestjs-i18n` | `en`, `vi` |
 | Upload | Multer | Đi kèm `@nestjs/platform-express` |
 | Queue | `@nestjs/bullmq` | BullMQ là bản đang được maintain |
@@ -38,12 +38,12 @@ Version chính xác nằm ở `package.json`. Môi trường development chạy 
 
 ## 2. API conventions
 
-Áp cho mọi endpoint. Shape cụ thể của từng endpoint xem Swagger.
+Áp cho mọi endpoint. Shape cụ thể của từng endpoint xem API docs.
 
 | | |
 |---|---|
 | Prefix | `/api` |
-| Authentication | `Authorization: Token <jwt>` — **không phải** `Bearer`. Swagger dùng `addApiKey` |
+| Authentication | `Authorization: Token <jwt>` — **không phải** `Bearer`. Document khai bằng `addApiKey` |
 | Envelope | Mọi response bọc trong root key: `user`, `profile`, `article`, `articles` + `articlesCount`, `comment`, `comments`, `tags` |
 | Error | `{ "errors": { "body": ["can't be empty"] } }` cho mọi status |
 | Pagination | `limit` default 20, `offset` default 0 |

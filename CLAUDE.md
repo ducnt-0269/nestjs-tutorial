@@ -74,7 +74,7 @@ in the PR are fine.
 ## Language
 
 Vietnamese prose in `docs/`, `plans/` and `README.md`, keeping technical terms in English.
-English everywhere else — code, comments, commit messages, Swagger descriptions.
+English everywhere else — code, comments, commit messages, OpenAPI descriptions.
 `src/i18n/vi/*` is product content, not code.
 
 ## Reference
