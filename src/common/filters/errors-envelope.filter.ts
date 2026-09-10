@@ -87,9 +87,13 @@ function isUniqueViolation(
 }
 
 /**
- * Under a driver adapter Prisma reports the violated index rather than the
- * field; `meta.target` is absent. Index names follow `<table>_<column>_key`
- * (docs/system-architecture.md §4), so the column is what sits between.
+ * Prisma 7 with a driver adapter no longer populates `meta.target`; the only
+ * thing adapter-pg passes on is the violated index name, even though the
+ * documentation still describes `target`. Open upstream since 2025-10:
+ * https://github.com/prisma/prisma/issues/28281 (#28953 is the P2002-specific
+ * duplicate). Index names follow `<table>_<column>_key` (docs/system-architecture.md
+ * §4), so the column is what sits between. Once the issue is fixed this
+ * function collapses to `meta.target[0]`.
  */
 function violatedField(
   exception: Prisma.PrismaClientKnownRequestError,
