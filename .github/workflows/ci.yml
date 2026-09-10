@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# A new push supersedes the run still in flight for the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # The Prisma Client is gitignored, so it does not exist on a fresh
+      # checkout. Nothing type-checks until it is generated.
+      - name: Generate Prisma Client
+        run: npm run db:generate
+
+      - name: Typecheck
+        # nest build excludes test files; only this checks them.
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit tests
+        run: npm test
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # oxlint runs type-aware rules, so it needs the generated Prisma Client.
+      - name: Generate Prisma Client
+        run: npm run db:generate
+
+      - name: oxlint
+        run: npm run lint
+
+      - name: Prettier
+        run: npm run format:check
+
+      - name: Sunlint
+        run: npm run lint:sun
