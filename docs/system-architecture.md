@@ -22,7 +22,7 @@ API cho nền tảng xuất bản bài viết, triển khai theo
 | Database | PostgreSQL 17 | uuid native, `ILIKE`, partial index cho bảng polymorphic |
 | ORM | Prisma 7 + `@prisma/adapter-pg` | Type generate từ schema; migration là SQL thuần |
 | Cache | Redis 7 + ioredis | Token revocation, queue backend |
-| Validation | class-validator + class-transformer | Chuẩn của NestJS `ValidationPipe` |
+| Validation | Zod | Standard Schema — NestJS 12 nhận thẳng, không cần adapter (§6.6) |
 | Authentication | `@nestjs/jwt` + `passport-jwt` | |
 | Password hashing | bcrypt | |
 | API docs | `@nestjs/swagger` sinh OpenAPI document, Scalar render | Swagger UI không dùng |
@@ -45,17 +45,35 @@ Version chính xác nằm ở `package.json`. Môi trường development chạy 
 | Prefix | `/api` |
 | Authentication | `Authorization: Token <jwt>` — **không phải** `Bearer`. Document khai bằng `addApiKey` |
 | Envelope | Mọi response bọc trong root key: `user`, `profile`, `article`, `articles` + `articlesCount`, `comment`, `comments`, `tags` |
-| Error | `{ "errors": { "body": ["can't be empty"] } }` cho mọi status |
+| Error | `{ "errors": { "<key>": ["..."] } }` cho mọi status — xem bảng key bên dưới |
 | Pagination | `limit` default 20, `offset` default 0 |
+
+**Error key.** Không phải một key `body` cố định. Key nói lỗi thuộc về cái gì:
+
+| Key | Dùng khi | Ví dụ |
+|---|---|---|
+| tên field | validate hỏng, hoặc field trùng unique | `{"email": ["can't be blank"]}` |
+| `credentials` | login sai email hoặc password | `{"credentials": ["invalid"]}` |
+| `token` | thiếu, sai, hoặc hết hạn token | `{"token": ["is missing"]}` |
+| tên resource | 403 và 404 | `{"article": ["not found"]}` |
 
 **Status code:**
 
 | | |
 |---|---|
-| 422 | Validation thất bại. Gồm cả **login sai credential** — không phải 401, vì spec chỉ dành 401 cho request thiếu authentication. `ValidationPipe` mặc định trả 400, phải config lại |
-| 401 | Request cần authentication nhưng không gửi token, hoặc token không hợp lệ |
+| 422 | Validation thất bại — thiếu field, sai định dạng, quá ngắn |
+| 409 | Vi phạm ràng buộc unique — username hoặc email đã có người dùng |
+| 401 | Chưa xác thực được: không gửi token, token sai/hết hạn, **hoặc login sai credential** |
 | 403 | Request hợp lệ nhưng không có permission — sửa/xoá resource không thuộc về mình |
 | 404 | Không tìm thấy resource |
+
+`StandardSchemaValidationPipe` mặc định trả 400, chỉnh bằng `errorHttpStatusCode`.
+
+Trang [error-handling](https://realworld-docs.netlify.app/specifications/backend/error-handling/)
+của RealWorld mô tả một format cũ (`{errors:{body:[...]}}`, 422 cho mọi thứ) và chưa từng được
+cập nhật kể từ lần chuyển thư mục. Bảng trên bám theo `specs/api/hurl/` trong repo
+`gothinkster/realworld` — thứ CI của họ thật sự chạy. Chi tiết đối chiếu ở
+`plans/reports/researcher-260910-1524-realworld-auth-contract.md`.
 
 **Endpoint optional-auth trả body khác nhau** tuỳ có token hay không: `following` và
 `favorited` phụ thuộc viewer. Đây là chỗ dễ sót nhất khi viết test.
@@ -142,9 +160,9 @@ Request
   ├─ Middleware        i18n resolver
   ├─ Guard             JwtAuthGuard | OptionalJwtAuthGuard
   │                    decode JWT, check blacklist trong Redis
-  ├─ Pipe              ValidationPipe → DTO
+  ├─ Pipe              StandardSchemaValidationPipe → Zod schema
   ├─ Handler           Controller → Service → PrismaService
-  ├─ Interceptor       SerializeInterceptor → bọc envelope
+  ├─ Interceptor       StandardSchemaSerializerInterceptor → cắt field + bọc envelope
   └─ ExceptionFilter   chuẩn hoá error theo §2
 ```
 
@@ -176,15 +194,30 @@ apply xong là mất luôn state cũ để diff. Recipe đầy đủ ở `CLAUDE
 
 ### 6.3 Serialization hai tầng · `PLANNED`
 
-**Context.** Prisma trả plain object, không phải class instance, nên `ClassSerializerInterceptor`
-và `@Exclude()` không tự hoạt động.
+**Context.** Password hash không được xuất hiện trong response. Dựa vào việc nhớ loại nó ra ở
+từng handler là kiểu bảo vệ sớm muộn cũng thủng.
 
-**Decision.** Chặn ở source rồi shape ở boundary: Prisma client `omit` field nhạy cảm ngay khi
-query; một interceptor `@Serialize(Dto)` bọc response vào envelope.
+**Decision.** Chặn hai lần, độc lập nhau.
 
-**Consequence.** Password không bao giờ rời database, không phụ thuộc việc nhớ gắn decorator.
-Cần **hai DTO riêng cho article**: từ 2024-08-16 spec bỏ `body` khỏi list và feed response,
-chỉ `GET /articles/:slug` còn trả.
+Tầng một, ở source: Prisma client `omit` password ngay khi query, chỉ query login mở lại bằng
+`omit: { password: false }` vì cần hash để `bcrypt.compare`.
+
+Tầng hai, ở boundary: mỗi resource một response schema, khai qua
+`@SerializeOptions({ schema })`. `StandardSchemaSerializerInterceptor` parse response qua schema
+đó trước khi trả về. Schema vừa cắt field vừa bọc envelope:
+
+```ts
+z.object({ email: z.string(), username: z.string(), bio: z.string().nullable(),
+           image: z.string().nullable(), token: z.string() })
+ .transform((user) => ({ user }))
+```
+
+**Consequence.** Tầng hai là **allowlist** — field không khai trong schema thì bị Zod cắt, kể cả
+field mới thêm vào model sau này. Mạnh hơn cách denylist kiểu `@Exclude()`, vốn quên gắn là lộ.
+Không handler nào tự viết envelope.
+
+Cần **hai response schema riêng cho article**: từ 2024-08-16 spec bỏ `body` khỏi list và feed
+response, chỉ `GET /articles/:slug` còn trả.
 
 ### 6.4 Polymorphic attachment · `PLANNED`
 
@@ -208,3 +241,31 @@ mỗi owner module tự register policy của mình qua multi-provider token.
 
 **Consequence.** Dependency vẫn một chiều. Thêm owner type mới chỉ cần thêm policy ở module mới,
 không sửa `attachments`. Đổi lại thêm một lớp indirection, và quên register policy chỉ lộ lúc runtime.
+
+### 6.6 Zod thay class-validator
+
+**Context.** Hướng dẫn của module dạy `ValidationPipe` + class-validator + class-transformer.
+Repo đã có Zod sẵn để validate environment variable, nên đi theo hướng dẫn nghĩa là nuôi hai thư
+viện validation cho cùng một việc.
+
+**Decision.** Dùng Zod cho cả ba chỗ: environment, request, response. Gỡ `class-validator` và
+`class-transformer`.
+
+Zod 4 khai báo `~standard`, mà NestJS 12 nhận Standard Schema như công dân hạng nhất — schema gắn
+vào tham số bằng `@Body({ schema })`, `StandardSchemaValidationPipe` đăng ký global một lần đọc
+schema đó ra từ `ArgumentMetadata`. Không có adapter, không có pipe tự viết.
+
+**Consequence.** Một thư viện validation, một nguồn sự thật: `z.infer` sinh type từ schema thay
+vì phải nuôi song song class và decorator.
+
+Format lỗi field-keyed ở §2 rơi ra tự nhiên: Zod trả `issue.path` tách khỏi `issue.message`, nên
+`exceptionFactory` chỉ việc lấy segment cuối của path làm key. class-validator thì ngược lại — nó
+nhét tên field vào trong message (cả 101 template mặc định), hợp với format phẳng chứ không hợp
+field-keyed.
+
+`@nestjs/swagger` 12 có `StandardSchemaOpenApiConverter` đọc thẳng schema từ `@Body({ schema })`,
+nên OpenAPI vẫn tự sinh, không phải khai `@ApiBody` tay.
+
+Đổi lại: lệch tài liệu khoá học lần thứ hai, sau §6.1. Mọi ví dụ NestJS ngoài kia vẫn viết bằng
+class-validator, nên người đọc code lần đầu sẽ thấy lạ. `nestjs-zod` không dùng — peer dependency
+của nó dừng ở `@nestjs/common ^11`, và việc nó làm thì NestJS 12 đã làm sẵn.
