@@ -6,6 +6,8 @@ const validEnv = {
   PORT: '3000',
   DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/db',
   REDIS_URL: 'redis://localhost:6379',
+  JWT_SECRET: 'a'.repeat(32),
+  JWT_TTL_SECONDS: '604800',
 };
 
 describe('validate', () => {
@@ -20,6 +22,20 @@ describe('validate', () => {
     const { DATABASE_URL: _omitted, ...incomplete } = validEnv;
 
     expect(() => validate(incomplete)).toThrow(EnvironmentValidationError);
+  });
+
+  it('rejects a JWT secret shorter than 32 characters', () => {
+    expect(() => validate({ ...validEnv, JWT_SECRET: 'short' })).toThrow(
+      EnvironmentValidationError,
+    );
+  });
+
+  it('rejects a token lifetime that is not a positive integer', () => {
+    for (const JWT_TTL_SECONDS of ['7d', '0', '-1', '1.5']) {
+      expect(() => validate({ ...validEnv, JWT_TTL_SECONDS })).toThrow(
+        EnvironmentValidationError,
+      );
+    }
   });
 
   it('rejects a PORT that is not a number', () => {

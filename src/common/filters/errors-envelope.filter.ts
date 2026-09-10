@@ -29,6 +29,12 @@ export class ErrorsEnvelopeFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<Response>();
+    // Mirrors Nest's BaseExceptionFilter: once a handler has started
+    // streaming, another status line would throw inside the error path.
+    if (response.headersSent) {
+      response.end();
+      return;
+    }
     const { status, body } = this.toResponse(exception);
     response.status(status).json(body);
   }

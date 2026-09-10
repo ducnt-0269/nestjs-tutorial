@@ -10,16 +10,27 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Prisma } from '../../generated/prisma/client.js';
 import { ErrorsEnvelopeFilter } from './errors-envelope.filter.js';
 
+function mockResponse(headersSent = false) {
+  return {
+    headersSent,
+    status: vi.fn().mockReturnThis(),
+    json: vi.fn(),
+    end: vi.fn(),
+  };
+}
+
+function hostFor(response: unknown): ArgumentsHost {
+  return {
+    switchToHttp: () => ({ getResponse: () => response }),
+  } as unknown as ArgumentsHost;
+}
+
 function run(
   exception: unknown,
   logger = new Logger(),
 ): { status: number; body: unknown } {
-  const response = { status: vi.fn().mockReturnThis(), json: vi.fn() };
-  const host = {
-    switchToHttp: () => ({ getResponse: () => response }),
-  } as unknown as ArgumentsHost;
-
-  new ErrorsEnvelopeFilter(logger).catch(exception, host);
+  const response = mockResponse();
+  new ErrorsEnvelopeFilter(logger).catch(exception, hostFor(response));
 
   return {
     status: response.status.mock.calls[0]?.[0] as number,
@@ -104,6 +115,19 @@ describe('ErrorsEnvelopeFilter', () => {
       body: { errors: { server: ['internal error'] } },
     });
     expect(error).toHaveBeenCalledWith(boom, 'ErrorsEnvelopeFilter');
+  });
+
+  it('only ends the response when headers were already sent', () => {
+    const response = mockResponse(true);
+
+    new ErrorsEnvelopeFilter(new Logger()).catch(
+      new Error('mid-stream'),
+      hostFor(response),
+    );
+
+    expect(response.end).toHaveBeenCalledOnce();
+    expect(response.status).not.toHaveBeenCalled();
+    expect(response.json).not.toHaveBeenCalled();
   });
 
   it('does not treat an HttpException as a generic status-bearing error', () => {

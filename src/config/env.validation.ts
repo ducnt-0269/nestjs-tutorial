@@ -19,6 +19,13 @@ export const envSchema = z.object({
   // resolves to localhost rather than rejecting.
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/, hostname: /.+/ }),
   REDIS_URL: z.url({ protocol: /^rediss?$/, hostname: /.+/ }),
+
+  // HS256 needs a key of at least 256 bits (RFC 7518 §3.2); 32 characters
+  // is the floor this check can enforce on a string.
+  JWT_SECRET: z.string().min(32),
+  // Seconds rather than "7d": jsonwebtoken types its duration strings as a
+  // template literal that a plain string from the environment cannot satisfy.
+  JWT_TTL_SECONDS: z.coerce.number().int().positive(),
 });
 
 export type EnvironmentVariables = z.infer<typeof envSchema>;
