@@ -1,0 +1,114 @@
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
+import type { Response } from 'express';
+import { Prisma } from '../../generated/prisma/client.js';
+import { type ErrorsEnvelope, isErrorsEnvelope } from '../errors-envelope.js';
+
+const UNIQUE_VIOLATION = 'P2002';
+
+interface UniqueViolationMeta {
+  driverAdapterError?: {
+    cause?: { table?: string; constraint?: { index?: string } };
+  };
+}
+
+/**
+ * Every error leaves the API as `{ errors: { <key>: [messages] } }`, whatever
+ * raised it. Catching everything also means Nest no longer logs unknown
+ * errors, so the 500 branch has to log them itself.
+ */
+@Catch()
+export class ErrorsEnvelopeFilter implements ExceptionFilter {
+  constructor(private readonly logger: Logger) {}
+
+  catch(exception: unknown, host: ArgumentsHost): void {
+    const response = host.switchToHttp().getResponse<Response>();
+    const { status, body } = this.toResponse(exception);
+    response.status(status).json(body);
+  }
+
+  private toResponse(exception: unknown): {
+    status: number;
+    body: ErrorsEnvelope;
+  } {
+    if (exception instanceof HttpException) {
+      const status = exception.getStatus();
+      const payload = exception.getResponse();
+      if (isErrorsEnvelope(payload)) return { status, body: payload };
+      return { status, body: envelope('request', exception.message) };
+    }
+
+    if (isUniqueViolation(exception)) {
+      return {
+        status: HttpStatus.CONFLICT,
+        body: envelope(violatedField(exception), 'has already been taken'),
+      };
+    }
+
+    // Errors raised before Nest sees the request, such as body-parser
+    // rejecting malformed JSON, carry their own status without being
+    // HttpExceptions.
+    const status = httpStatusOf(exception);
+    if (status !== undefined) {
+      return { status, body: envelope('request', messageOf(exception)) };
+    }
+
+    this.logger.error(exception, ErrorsEnvelopeFilter.name);
+    return {
+      status: HttpStatus.INTERNAL_SERVER_ERROR,
+      body: envelope('server', 'internal error'),
+    };
+  }
+}
+
+function envelope(key: string, message: string): ErrorsEnvelope {
+  return { errors: { [key]: [message] } };
+}
+
+function isUniqueViolation(
+  exception: unknown,
+): exception is Prisma.PrismaClientKnownRequestError {
+  return (
+    exception instanceof Prisma.PrismaClientKnownRequestError &&
+    exception.code === UNIQUE_VIOLATION
+  );
+}
+
+/**
+ * Under a driver adapter Prisma reports the violated index rather than the
+ * field; `meta.target` is absent. Index names follow `<table>_<column>_key`
+ * (docs/system-architecture.md §4), so the column is what sits between.
+ */
+function violatedField(
+  exception: Prisma.PrismaClientKnownRequestError,
+): string {
+  const cause = (exception.meta as UniqueViolationMeta | undefined)
+    ?.driverAdapterError?.cause;
+  const table = cause?.table ?? '';
+  const index = cause?.constraint?.index ?? '';
+  const prefix = `${table}_`;
+  if (!table || !index.startsWith(prefix)) return 'body';
+  return index.slice(prefix.length).replace(/_key$/, '') || 'body';
+}
+
+function httpStatusOf(exception: unknown): number | undefined {
+  if (typeof exception !== 'object' || exception === null) return undefined;
+  const { status, statusCode } = exception as {
+    status?: unknown;
+    statusCode?: unknown;
+  };
+  const candidate = status ?? statusCode;
+  return typeof candidate === 'number' && candidate >= 400 && candidate < 600
+    ? candidate
+    : undefined;
+}
+
+function messageOf(exception: unknown): string {
+  return exception instanceof Error ? exception.message : 'bad request';
+}

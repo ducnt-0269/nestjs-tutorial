@@ -9,7 +9,12 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor(configService: ConfigService) {
-    super({ adapter: createPrismaAdapter(configService) });
+    super({
+      adapter: createPrismaAdapter(configService),
+      // The password hash never leaves this service unless a query opts back
+      // in with `omit: { password: false }` (docs/system-architecture.md §6.3).
+      omit: { user: { password: true } },
+    });
   }
 
   async onModuleInit(): Promise<void> {

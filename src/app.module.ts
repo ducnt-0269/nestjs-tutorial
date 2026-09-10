@@ -2,6 +2,7 @@ import * as path from 'node:path';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AcceptLanguageResolver, I18nModule, QueryResolver } from 'nestjs-i18n';
+import { CommonModule } from './common/common.module.js';
 import { HelloController } from './hello/hello.controller.js';
 import { validate } from './config/env.validation.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -27,6 +28,7 @@ import { RedisModule } from './redis/redis.module.js';
         AcceptLanguageResolver,
       ],
     }),
+    CommonModule,
     PrismaModule,
     RedisModule,
   ],
