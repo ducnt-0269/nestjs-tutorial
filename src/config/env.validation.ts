@@ -1,5 +1,4 @@
-import { plainToInstance } from 'class-transformer';
-import { IsEnum, IsInt, IsUrl, Max, Min, validateSync } from 'class-validator';
+import { z } from 'zod';
 
 export class EnvironmentValidationError extends Error {
   constructor(details: string) {
@@ -8,37 +7,21 @@ export class EnvironmentValidationError extends Error {
   }
 }
 
-export enum NodeEnv {
-  Development = 'development',
-  Production = 'production',
-  Test = 'test',
-}
+export const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'production', 'test']),
 
-export class EnvironmentVariables {
-  @IsEnum(NodeEnv)
-  NODE_ENV!: NodeEnv;
+  // Every process.env value is a string, so numeric variables need coercion.
+  PORT: z.coerce.number().int().min(1).max(65535),
 
-  @IsInt()
-  @Min(1)
-  @Max(65535)
-  PORT!: number;
+  // A bare string would accept "localhost:5432" and defer the failure to
+  // PrismaPg at startup; checking the protocol catches it here. The hostname
+  // has to be checked too: z.url() accepts "redis:///0", which ioredis then
+  // resolves to localhost rather than rejecting.
+  DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/, hostname: /.+/ }),
+  REDIS_URL: z.url({ protocol: /^rediss?$/, hostname: /.+/ }),
+});
 
-  // A bare @IsString would accept "localhost:5432" and defer the failure to
-  // PrismaPg at startup; checking the protocol catches it here.
-  @IsUrl({
-    protocols: ['postgresql', 'postgres'],
-    require_protocol: true,
-    require_tld: false,
-  })
-  DATABASE_URL!: string;
-
-  @IsUrl({
-    protocols: ['redis', 'rediss'],
-    require_protocol: true,
-    require_tld: false,
-  })
-  REDIS_URL!: string;
-}
+export type EnvironmentVariables = z.infer<typeof envSchema>;
 
 /**
  * Runs at startup. Any missing or malformed variable aborts the process here
@@ -47,17 +30,14 @@ export class EnvironmentVariables {
 export function validate(
   config: Record<string, unknown>,
 ): EnvironmentVariables {
-  const parsed = plainToInstance(EnvironmentVariables, config, {
-    enableImplicitConversion: true,
-  });
+  const result = envSchema.safeParse(config);
 
-  const errors = validateSync(parsed, { skipMissingProperties: false });
-  if (errors.length > 0) {
-    const details = errors
-      .map((error) => Object.values(error.constraints ?? {}).join(', '))
+  if (!result.success) {
+    const details = result.error.issues
+      .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
       .join('; ');
     throw new EnvironmentValidationError(details);
   }
 
-  return parsed;
+  return result.data;
 }

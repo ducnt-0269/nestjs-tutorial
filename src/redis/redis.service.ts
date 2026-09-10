@@ -4,7 +4,7 @@ import { REDIS_CLIENT } from './redis.constants.js';
 
 @Injectable()
 export class RedisService implements OnModuleDestroy {
-  constructor(@Inject(REDIS_CLIENT) readonly client: Redis) {}
+  constructor(@Inject(REDIS_CLIENT) private readonly client: Redis) {}
 
   async onModuleDestroy(): Promise<void> {
     // With enableOfflineQueue disabled, quit() rejects whenever the socket is

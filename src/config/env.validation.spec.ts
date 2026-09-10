@@ -1,6 +1,3 @@
-// class-transformer reads decorator metadata; Nest loads this itself at runtime.
-import 'reflect-metadata';
-
 import { describe, expect, it } from 'vitest';
 import { EnvironmentValidationError, validate } from './env.validation.js';
 
@@ -35,5 +32,28 @@ describe('validate', () => {
     expect(() => validate({ ...validEnv, NODE_ENV: 'staging' })).toThrow(
       EnvironmentValidationError,
     );
+  });
+
+  it('rejects a URL that carries no protocol or the wrong one', () => {
+    for (const DATABASE_URL of [
+      'localhost:5432',
+      'mysql://localhost:3306/db',
+    ]) {
+      expect(() => validate({ ...validEnv, DATABASE_URL })).toThrow(
+        EnvironmentValidationError,
+      );
+    }
+  });
+
+  // ioredis reads "redis:///0" as localhost:6379 instead of failing, so a
+  // hostless URL has to be rejected here or it silently hits the wrong server.
+  it('rejects a URL with no host', () => {
+    expect(() => validate({ ...validEnv, REDIS_URL: 'redis:///0' })).toThrow(
+      EnvironmentValidationError,
+    );
+
+    expect(() =>
+      validate({ ...validEnv, DATABASE_URL: 'postgresql:///db' }),
+    ).toThrow(EnvironmentValidationError);
   });
 });
