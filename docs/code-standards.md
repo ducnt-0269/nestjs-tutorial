@@ -53,7 +53,10 @@ nên yêu cầu "0 error" là khả thi.
 
 - Tên file **kebab-case**: `articles.service.ts`, `jwt-auth.guard.ts`
 - Theo quy ước hậu tố của NestJS: `.controller.ts`, `.service.ts`, `.module.ts`,
-  `.dto.ts`, `.guard.ts`, `.interceptor.ts`, `.filter.ts`
+  `.guard.ts`, `.interceptor.ts`, `.filter.ts`
+- Zod schema đặt hậu tố **`.schema.ts`**, không phải `.dto.ts` — không có DTO class nào
+  (`system-architecture.md` §6.6). Type dùng ở service lấy bằng `z.infer`, khai cùng file
+  với schema
 - Mỗi file **dưới 200 dòng**. Vượt thì tách theo trách nhiệm, không tách cho đủ số
 - Một module một thư mục, nội dung module không rò rỉ ra ngoài qua import chéo —
   ranh giới phụ thuộc quy định ở `system-architecture.md` §3
