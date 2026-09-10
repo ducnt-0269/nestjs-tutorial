@@ -26,6 +26,13 @@ export const envSchema = z.object({
   // Seconds rather than "7d": jsonwebtoken types its duration strings as a
   // template literal that a plain string from the environment cannot satisfy.
   JWT_TTL_SECONDS: z.coerce.number().int().positive(),
+
+  // Comma-separated origins allowed to call the API from a browser. Parsed
+  // here so main.ts receives a list and every entry is a real URL.
+  CORS_ORIGIN: z
+    .string()
+    .transform((value) => value.split(',').map((origin) => origin.trim()))
+    .pipe(z.array(z.url()).min(1)),
 });
 
 export type EnvironmentVariables = z.infer<typeof envSchema>;

@@ -8,6 +8,7 @@ const validEnv = {
   REDIS_URL: 'redis://localhost:6379',
   JWT_SECRET: 'a'.repeat(32),
   JWT_TTL_SECONDS: '604800',
+  CORS_ORIGIN: 'http://localhost:4100',
 };
 
 describe('validate', () => {
@@ -36,6 +37,24 @@ describe('validate', () => {
         EnvironmentValidationError,
       );
     }
+  });
+
+  it('splits CORS_ORIGIN into a list of origins', () => {
+    const result = validate({
+      ...validEnv,
+      CORS_ORIGIN: 'http://localhost:4100, https://app.example.com',
+    });
+
+    expect(result.CORS_ORIGIN).toEqual([
+      'http://localhost:4100',
+      'https://app.example.com',
+    ]);
+  });
+
+  it('rejects a CORS_ORIGIN entry that is not a URL', () => {
+    expect(() =>
+      validate({ ...validEnv, CORS_ORIGIN: 'http://localhost:4100,app' }),
+    ).toThrow(EnvironmentValidationError);
   });
 
   it('rejects a PORT that is not a number', () => {

@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
@@ -15,7 +16,9 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix(API_PREFIX);
-  app.enableCors();
+  app.enableCors({
+    origin: app.get(ConfigService).getOrThrow<string[]>('CORS_ORIGIN'),
+  });
   // Lets PrismaService and RedisService close their connections on SIGTERM.
   app.enableShutdownHooks();
 
