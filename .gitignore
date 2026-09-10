@@ -1,0 +1,47 @@
+# dependencies
+node_modules/
+
+# build
+dist/
+build/
+*.tsbuildinfo
+
+# env
+.env
+.env.*
+!.env.example
+
+# logs
+logs/
+*.log
+npm-debug.log*
+
+# test / coverage
+coverage/
+.nyc_output/
+
+# uploads (local file storage)
+uploads/
+public/uploads/
+
+# lint reports
+sunlint-report.json
+
+# agent working files
+.claude/
+.mcp.json
+
+# editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+
+# nest
+.nest/
+
+# plan
+plans/
+graphify-out/
+
+/src/generated/prisma
