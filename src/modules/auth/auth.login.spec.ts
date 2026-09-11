@@ -18,6 +18,7 @@ import { CommonModule } from '../../common/common.module.js';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AuthModule } from './auth.module.js';
+import { TokenRevocationService } from './token-revocation.service.js';
 
 const secret = 'test-secret-'.padEnd(32, 'x');
 const password = 'secret123';
@@ -54,6 +55,9 @@ describe('POST /api/users/login', () => {
     })
       .overrideProvider(PrismaService)
       .useValue({ user: { findUnique } })
+      // Redis stays out of these suites; nothing here exercises revocation.
+      .overrideProvider(TokenRevocationService)
+      .useValue({ isRevoked: () => Promise.resolve(false) })
       .compile();
 
     app = moduleRef.createNestApplication();

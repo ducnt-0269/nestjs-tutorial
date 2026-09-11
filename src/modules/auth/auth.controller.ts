@@ -4,17 +4,25 @@ import {
   HttpCode,
   Post,
   SerializeOptions,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiSecurity,
   ApiTags,
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { NoStore } from '../../common/decorators/no-store.decorator.js';
+import {
+  JwtAuthGuard,
+  TOKEN_SCHEME,
+} from '../../common/guards/jwt-auth.guard.js';
 import {
   userResponseExample,
   userResponseSchema,
@@ -27,13 +35,17 @@ import {
   registerSchema,
 } from './auth.schema.js';
 import { AuthService } from './auth.service.js';
+import { TokenRevocationService } from './token-revocation.service.js';
 
 // The spec keeps /api/users (public: register, login) apart from /api/user
 // (the authenticated caller), so this controller answers under the plural.
 @ApiTags('users')
 @Controller('users')
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly revocation: TokenRevocationService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Register a new account' })
@@ -69,5 +81,19 @@ export class AuthController {
     @Body({ schema: loginSchema }) body: LoginBody,
   ): Promise<UserWithToken> {
     return this.auth.login(body.user);
+  }
+
+  @Post('logout')
+  // The presented token dies here, so there is nothing left to answer with.
+  @HttpCode(204)
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Sign out and revoke the presented token' })
+  @ApiNoContentResponse()
+  @ApiSecurity(TOKEN_SCHEME)
+  @ApiUnauthorizedResponse({
+    schema: { example: { errors: { token: ['is invalid'] } } },
+  })
+  logout(@CurrentUser() caller: Express.User): Promise<void> {
+    return this.revocation.revoke(caller.token);
   }
 }
