@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import type { Response } from 'express';
 import { AppModule } from './app.module.js';
+import { TOKEN_SCHEME } from './common/guards/jwt-auth.guard.js';
 
 // The leading slash matters: Nest mounts its 404 handler with
 // `express.use(prefix, ...)` verbatim, and Express 5 never matches a mount
@@ -26,6 +27,12 @@ async function bootstrap(): Promise<void> {
     .setTitle('Medium Clone API')
     .setDescription('Backend API implementing the RealWorld specification')
     .setVersion('1.0')
+    // The spec sends the JWT as an Authorization header with the Token scheme,
+    // which OpenAPI models as an apiKey. Bearer would document the wrong header.
+    .addApiKey(
+      { type: 'apiKey', name: 'Authorization', in: 'header' },
+      TOKEN_SCHEME,
+    )
     .build();
 
   // @nestjs/swagger builds the OpenAPI document from the decorators; Scalar only

@@ -8,6 +8,7 @@ import { HelloController } from './hello/hello.controller.js';
 import { validate } from './config/env.validation.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './redis/redis.module.js';
+import { UsersModule } from './modules/users/users.module.js';
 
 @Module({
   imports: [
@@ -33,6 +34,9 @@ import { RedisModule } from './redis/redis.module.js';
     PrismaModule,
     RedisModule,
     AuthModule,
+    // Listed even though auth already imports it: a controller only answers
+    // while its module is in the graph, and that should not hang on auth.
+    UsersModule,
   ],
   controllers: [HelloController],
 })
