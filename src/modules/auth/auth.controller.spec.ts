@@ -94,7 +94,6 @@ describe('POST /api/users', () => {
       .post('/api/users')
       .send(validBody)
       .expect(201)
-      // The response carries a token, so it must not be cached anywhere.
       .expect('Cache-Control', 'no-store');
 
     expect(response.body).toEqual({

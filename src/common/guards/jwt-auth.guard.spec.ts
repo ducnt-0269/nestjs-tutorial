@@ -2,9 +2,8 @@ import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 
-// The rejection shapes are covered end to end by the tests around GET /api/user.
-// What only reaches this far is the branch no request can trigger today: an
-// error raised inside the strategy, which #3 will make reachable through Redis.
+// The rejection shapes are covered by the tests around GET /api/user. Only the
+// branch no request can trigger today — an error inside the strategy — is here.
 describe('JwtAuthGuard', () => {
   const guard = new JwtAuthGuard();
 

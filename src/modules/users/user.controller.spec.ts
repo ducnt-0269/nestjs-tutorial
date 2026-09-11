@@ -45,8 +45,7 @@ describe('GET /api/user', () => {
         }),
         CommonModule,
         PrismaModule,
-        // The strategy that verifies the token is registered by auth; the route
-        // itself belongs here.
+        // Registers the strategy; the route itself belongs to users.
         AuthModule,
         UsersModule,
       ],
@@ -82,7 +81,6 @@ describe('GET /api/user', () => {
 
     const response = await read(token)
       .expect(200)
-      // The response carries a token, so it must not be cached anywhere.
       .expect('Cache-Control', 'no-store');
 
     expect(response.body).toEqual({
@@ -106,8 +104,7 @@ describe('GET /api/user', () => {
     expect(response.body).toEqual({ errors: { token: ['is invalid'] } });
   });
 
-  // The three rejections below are read out of passport's info argument, so
-  // they also pin the library's wording in place.
+  // The three rejections below pin passport's own wording in place.
   it('answers 401 when the header is absent', async () => {
     const response = await read().expect(401);
 

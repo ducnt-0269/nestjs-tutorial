@@ -8,13 +8,9 @@ import type { LoginInput, RegisterInput } from './auth.schema.js';
 const SALT_ROUNDS = 10;
 
 // Compared against when no account matches the email, so that a wrong email
-// and a wrong password take the same time to answer. Hashed once while the
-// module loads, which costs the startup one comparison rather than the first
-// sign-in.
+// and a wrong password take the same time to answer.
 const NO_ACCOUNT_HASH = hashSync('no account matches this hash', SALT_ROUNDS);
 
-// The same answer for both failures: the client learns that signing in failed,
-// not whether the email is registered.
 const INVALID_CREDENTIALS = { errors: { credentials: ['invalid'] } };
 
 @Injectable()

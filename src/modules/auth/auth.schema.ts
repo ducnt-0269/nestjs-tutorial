@@ -35,8 +35,7 @@ export const loginSchema = z.object({
   user: z.object(
     {
       email,
-      // Presence only. Registration owns the length rule; repeating it here
-      // would answer differently for a password that is merely too short.
+      // Presence only: the length rule belongs to registration.
       password: z.string({ error: blank }).min(1, blank),
     },
     { error: blank },

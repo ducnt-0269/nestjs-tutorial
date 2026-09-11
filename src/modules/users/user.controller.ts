@@ -21,8 +21,7 @@ import {
 import { userResponseExample, userResponseSchema } from './users.schema.js';
 import { type UserWithToken, UsersService } from './users.service.js';
 
-// The singular route is the caller's own account and belongs to this module;
-// the plural one is public and stays with auth.
+// The caller's own account; the public plural route stays with auth.
 @ApiTags('user')
 @Controller('user')
 export class UserController {
@@ -41,14 +40,12 @@ export class UserController {
   async current(@CurrentUser() caller: Express.User): Promise<UserWithToken> {
     const user = await this.users.findById(caller.id);
 
-    // The spec offers no way to delete an account, so this answers only a token
-    // minted for a row that was then removed by hand.
+    // The spec has no way to delete an account; only a row removed by hand.
     if (!user) {
       throw new UnauthorizedException({ errors: { token: ['is invalid'] } });
     }
 
-    // The token the client presented rather than a new one: one sign-in means
-    // one token, so revoking it later ends the whole session.
+    // The presented token, not a new one: one sign-in, one token to revoke.
     return { ...user, token: caller.token };
   }
 }

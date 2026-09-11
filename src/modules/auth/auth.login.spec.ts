@@ -81,7 +81,6 @@ describe('POST /api/users/login', () => {
       user: { email: 'Jake@Example.com', password },
     })
       .expect(200)
-      // The response carries a token, so it must not be cached anywhere.
       .expect('Cache-Control', 'no-store');
 
     expect(response.body).toEqual({
@@ -133,8 +132,7 @@ describe('POST /api/users/login', () => {
     );
 
     // A comparison at cost 10 takes tens of milliseconds; returning early
-    // without one would answer in about a single millisecond. The bound sits
-    // far below the real cost so that faster hardware cannot make it flake.
+    // would answer in about one. The bound sits low so it cannot flake.
     expect(performance.now() - started).toBeGreaterThan(10);
   });
 

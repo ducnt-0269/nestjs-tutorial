@@ -11,8 +11,6 @@ export const userResponseSchema = z
   })
   .transform((user) => ({ user }));
 
-// One example for the OpenAPI document, shared by every endpoint that answers
-// with an account.
 export const userResponseExample = {
   user: {
     email: 'jake@example.com',
