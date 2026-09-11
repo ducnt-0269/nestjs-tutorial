@@ -1,271 +1,144 @@
 # System Architecture
 
-API cho nền tảng xuất bản bài viết, triển khai theo
-[RealWorld specification](https://realworld-docs.netlify.app/specifications/backend/endpoints).
-Ứng dụng NestJS monolithic, PostgreSQL làm primary data source, Redis giữ state ngắn hạn.
+Backend API cho nền tảng xuất bản bài viết theo RealWorld specification: quản lý tài khoản,
+profile, bài viết, bình luận, theo dõi người dùng và đánh dấu bài viết yêu thích.
 
-> **Tài liệu này vẽ hình dạng và ghi lý do. Không chứa chi tiết implementation.**
-> Field và data type → `prisma/schema.prisma`. Request/response contract → API docs
-> `/api/docs`. Scope từng milestone → GitHub issues.
->
-> Mục đánh dấu **`PLANNED`** mô tả phần chưa tồn tại. Hiện chỉ milestone 1 đã build.
+Tài liệu mô tả **target architecture** và lý do của các quyết định chính. Các thành phần bên
+dưới không đồng nghĩa với việc đã được triển khai đầy đủ; tiến độ và scope nằm ở GitHub issues.
 
----
+## 1. System overview
 
-## 1. Stack
-
-| Layer | Chọn | Lý do |
-|---|---|---|
-| Runtime | Node.js 24 | LTS đến 2028-04; Node 25 đã EOL 2026-06 |
-| Framework | NestJS 12 | Bản `nest new` sinh ra; scaffold build và test xanh ngay |
-| TypeScript | 6 | Do starter ghim |
-| Database | PostgreSQL 17 | uuid native, `ILIKE`, partial index cho bảng polymorphic |
-| ORM | Prisma 7 + `@prisma/adapter-pg` | Type generate từ schema; migration là SQL thuần |
-| Cache | Redis 7 + ioredis | Token revocation, queue backend |
-| Validation | Zod | Standard Schema — NestJS 12 nhận thẳng, không cần adapter (§6.6) |
-| Authentication | `@nestjs/jwt` + `passport-jwt` | |
-| Password hashing | bcrypt | |
-| API docs | `@nestjs/swagger` sinh OpenAPI document, Scalar render | Swagger UI không dùng |
-| i18n | `nestjs-i18n` | `en`, `vi` |
-| Upload | Multer | Đi kèm `@nestjs/platform-express` |
-| Queue | `@nestjs/bullmq` | BullMQ là bản đang được maintain |
-| Test | Vitest + Supertest | Do starter sinh ra, không phải Jest |
-| Lint | oxlint + Prettier + Sunlint | Starter dùng oxlint thay ESLint |
-
-Version chính xác nằm ở `package.json`. Môi trường development chạy bằng Docker Compose.
-
----
-
-## 2. API conventions
-
-Áp cho mọi endpoint. Shape cụ thể của từng endpoint xem API docs.
-
-| | |
-|---|---|
-| Prefix | `/api` |
-| Authentication | `Authorization: Token <jwt>` — **không phải** `Bearer`. Document khai bằng `addApiKey` |
-| Envelope | Mọi response bọc trong root key: `user`, `profile`, `article`, `articles` + `articlesCount`, `comment`, `comments`, `tags` |
-| Error | `{ "errors": { "<key>": ["..."] } }` cho mọi status — xem bảng key bên dưới |
-| Pagination | `limit` default 20, `offset` default 0 |
-
-**Error key.** Không phải một key `body` cố định. Key nói lỗi thuộc về cái gì:
-
-| Key | Dùng khi | Ví dụ |
-|---|---|---|
-| tên field | validate hỏng, hoặc field trùng unique | `{"email": ["can't be blank"]}` |
-| `credentials` | login sai email hoặc password | `{"credentials": ["invalid"]}` |
-| `token` | thiếu, sai, hoặc hết hạn token | `{"token": ["is missing"]}` |
-| tên resource | 403 và 404 | `{"article": ["not found"]}` |
-
-**Status code:**
-
-| | |
-|---|---|
-| 422 | Validation thất bại — thiếu field, sai định dạng, quá ngắn |
-| 409 | Vi phạm ràng buộc unique — username hoặc email đã có người dùng |
-| 401 | Chưa xác thực được: không gửi token, token sai/hết hạn, **hoặc login sai credential** |
-| 403 | Request hợp lệ nhưng không có permission — sửa/xoá resource không thuộc về mình |
-| 404 | Không tìm thấy resource |
-
-`StandardSchemaValidationPipe` mặc định trả 400, chỉnh bằng `errorHttpStatusCode`.
-
-Trang [error-handling](https://realworld-docs.netlify.app/specifications/backend/error-handling/)
-của RealWorld mô tả một format cũ (`{errors:{body:[...]}}`, 422 cho mọi thứ) và chưa từng được
-cập nhật kể từ lần chuyển thư mục. Bảng trên bám theo `specs/api/hurl/` trong repo
-`gothinkster/realworld` — thứ CI của họ thật sự chạy. Chi tiết đối chiếu ở
-`plans/reports/researcher-260910-1524-realworld-auth-contract.md`.
-
-**Endpoint optional-auth trả body khác nhau** tuỳ có token hay không: `following` và
-`favorited` phụ thuộc viewer. Đây là chỗ dễ sót nhất khi viết test.
-
-**Ownership:** chỉ author sửa hoặc xoá được article và comment của mình.
-
----
-
-## 3. Module structure
-
-```
-src/
-├── main.ts
-├── app.module.ts
-├── config/            validate environment variable lúc bootstrap
-├── prisma/            PrismaModule, PrismaService
-├── redis/             RedisModule, RedisService
-├── i18n/              en/, vi/
-├── hello/             tạm thời, gỡ khi có endpoint thật
-│
-│                      ── dưới đây là PLANNED ──
-├── common/            decorators, filters, guards, interceptors, pipes
-└── modules/           auth, users, profiles, articles, comments, tags, attachments
-```
-
-### Dependency boundaries
-
-| Module | Được phụ thuộc vào |
-|---|---|
-| `common`, `config`, `prisma`, `redis` | không phụ thuộc domain module nào |
-| `attachments` | `prisma` |
-| `users` | `prisma`, `attachments` |
-| `auth` | `users` |
-| `profiles` | `users` |
-| `tags` | `prisma` |
-| `articles` | `users`, `tags`, `attachments` |
-| `comments` | `articles`, `users` |
-
-Dependency chỉ đi một chiều theo bảng trên. `attachments` không bao giờ import domain module
-nào — nó công bố interface, module owner tự register vào (§6.5).
-
-`author.following` xuất hiện nested trong cả article lẫn comment response. Đó là **shared query
-đặt tại `users`**, không phải dependency edge mới giữa `comments` và `profiles`.
-
----
-
-## 4. Data model · `PLANNED`
-
-Chưa có model nào. Field, type và constraint thuộc về `prisma/schema.prisma`.
+Ứng dụng là một **modular monolith** dùng NestJS. Các domain module chạy trong cùng ứng dụng,
+phân chia theo business responsibility và có dependency boundary rõ ràng.
 
 ```mermaid
-erDiagram
-    User ||--o{ Article : "viết"
-    User ||--o{ Comment : "viết"
-    User ||--o{ Favorite : "đánh dấu"
-    User ||--o{ Follow : "theo dõi"
-    Article ||--o{ Comment : "chứa"
-    Article ||--o{ Favorite : "được đánh dấu"
-    Article }o--o{ Tag : "gắn thẻ"
+flowchart LR
+    Client[Client] --> API[NestJS API]
+    API --> DB[(PostgreSQL)]
+    API --> Redis[(Redis)]
 ```
 
-| Model | Vai trò |
+| Thành phần | Trách nhiệm |
 |---|---|
-| `User` | Account và profile |
-| `Article` | Bài viết, public identifier là `slug` |
-| `Tag` | Nhiều-nhiều với `Article` qua join table |
-| `Comment` | Thuộc một `Article` và một `User` |
-| `Favorite` | Join table `User` × `Article` |
-| `Follow` | Self-referencing `User` |
-| `Attachment` | Polymorphic, **không** foreign key (§6.4) |
+| NestJS API | Xử lý request, authentication, authorization và business logic |
+| PostgreSQL | Primary data source cho tài khoản và nội dung |
+| Redis | State ngắn hạn cho token revocation và backend cho queue |
 
-`Attachment` đứng ngoài sơ đồ vì không có foreign key tới model nào.
+Prisma quản lý data access và database schema. Zod định nghĩa validation và response
+schema. OpenAPI cung cấp contract để client tích hợp với API.
 
-**Avatar:** `Attachment` là source of truth, `User.image` giữ URL derived để đọc profile khỏi join.
-Ngoại lệ có chủ đích: `PUT /user` được ghi thẳng `User.image` vì spec cho phép client gửi URL
-bất kỳ. Mọi path khác đi qua upload service.
+## 2. Module boundaries
 
----
+| Module | Trách nhiệm | Domain dependency được phép |
+|---|---|---|
+| `auth` | Registration, login, token issuance và token verification | `users` |
+| `users` | Tài khoản và profile của người dùng | `attachments` |
+| `profiles` | Profile công khai và quan hệ theo dõi | `users` |
+| `articles` | Bài viết, feed và yêu thích | `users`, `tags`, `attachments` |
+| `comments` | Bình luận trên bài viết | `articles`, `users` |
+| `tags` | Nhãn phân loại bài viết | — |
+| `attachments` | Tệp đính kèm và liên kết với owner | — |
 
-## 5. Request flow · `PLANNED`
+Các infrastructure module như configuration, database, Redis và xử lý request dùng chung không
+phụ thuộc domain module. Domain module có thể sử dụng infrastructure cần thiết cho trách nhiệm của mình.
 
-```
-Request
-  ├─ Middleware        i18n resolver
-  ├─ Guard             JwtAuthGuard | OptionalJwtAuthGuard
-  │                    decode JWT, check blacklist trong Redis
-  ├─ Pipe              StandardSchemaValidationPipe → Zod schema
-  ├─ Handler           Controller → Service → PrismaService
-  ├─ Interceptor       StandardSchemaSerializerInterceptor → cắt field + bọc envelope
-  └─ ExceptionFilter   chuẩn hoá error theo §2
-```
+Dependency giữa domain module đi một chiều theo bảng trên. Logic được dùng chung đặt tại
+module sở hữu dữ liệu hoặc khái niệm đó; chẳng hạn thông tin người dùng và quan hệ theo dõi
+được cung cấp từ `users` cho các response bài viết và bình luận.
 
-Endpoint optional-auth dùng `OptionalJwtAuthGuard`: không có token vẫn đi tiếp.
+`auth` sở hữu registration vì thao tác này vừa tạo tài khoản vừa phát hành token. `users` quản lý
+tài khoản mà không cần phụ thuộc ngược vào `auth`.
 
----
+## 3. Conceptual data model
 
-## 6. Design decisions
+| Khái niệm | Vai trò và quan hệ |
+|---|---|
+| User | Tài khoản và profile; có thể viết bài, bình luận, theo dõi và yêu thích |
+| Article | Bài viết thuộc một User, có nhiều Comment và nhiều Tag |
+| Comment | Bình luận thuộc một Article và được viết bởi một User |
+| Tag | Nhãn có thể gắn với nhiều Article |
+| Favorite | Quan hệ một User yêu thích một Article |
+| Follow | Quan hệ có hướng giữa người theo dõi và người được theo dõi |
+| Attachment | Tệp có thể thuộc nhiều loại owner, chẳng hạn User hoặc Article |
 
-### 6.1 Prisma làm ORM
+PostgreSQL bảo vệ referential integrity của các relationship thông thường bằng constraint.
+Attachment là ngoại lệ có chủ đích: polymorphic relationship được quản lý ở application layer,
+như giải thích ở §5.
 
-**Context.** Hướng dẫn của module đề xuất TypeORM.
+## 4. Request flow và API conventions
 
-**Decision.** Dùng Prisma.
+Một request đi qua authentication và authorization phù hợp, validation, business logic,
+data access và serialization trước khi trả về client. Lỗi ở các bước được chuyển về cùng một format.
 
-**Consequence.** Type generate từ schema thay vì suy từ decorator; không có bẫy `synchronize`;
-migration là SQL thuần review được. Đổi lại: không có down migration (§6.2), không model được
-polymorphic relation (§6.4), và phải tự viết `PrismaService` vì không có module chính chủ.
+Controller tiếp nhận request và chuyển cho service xử lý. Service giữ business logic; Prisma
+cung cấp data access. Validation và serialization là quy tắc chung tại API boundary.
 
-### 6.2 Migration không có down
+| Nguyên tắc | Thiết kế |
+|---|---|
+| Routing | API dùng prefix `/api` |
+| Authentication | JWT qua header `Authorization: Token <jwt>`; Redis lưu state cho token revocation |
+| Authorization | Chỉ author được sửa hoặc xoá bài viết và bình luận của mình |
+| Optional authentication | Một số endpoint cho phép không đăng nhập; dữ liệu quan hệ như `following` và `favorited` phụ thuộc người xem |
+| Response envelope | Dữ liệu bọc trong root key của resource; response schema xác định field được công khai |
+| Error format | Format thống nhất `{ "errors": { "<key>": ["..."] } }`; key chỉ field hoặc đối tượng gây lỗi |
+| Internal error | Client nhận thông báo chung; chi tiết được ghi vào log |
 
-**Context.** Cần đủ bốn thao tác add / apply / revert / reset. Prisma không hỗ trợ down migration.
+Contract cụ thể của endpoint, status code và tham số nằm trong API docs.
 
-**Decision.** Ba thao tác đầu bọc thành npm script. Revert làm thủ công, không dựng tooling —
-development database là database vứt được.
+## 5. Design decisions
 
-**Consequence.** Muốn revert được thì phải sinh script nghịch **trước khi** apply migration —
-apply xong là mất luôn state cũ để diff. Recipe đầy đủ ở `CLAUDE.md`.
+### Prisma cho data access
 
-### 6.3 Serialization hai tầng · `PLANNED`
+Dùng Prisma thay cho TypeORM trong tài liệu khoá học. Schema là nguồn định nghĩa model và
+type được generate từ đó; migration SQL có thể review trực tiếp.
 
-**Context.** Password hash không được xuất hiện trong response. Dựa vào việc nhớ loại nó ra ở
-từng handler là kiểu bảo vệ sớm muộn cũng thủng.
+Đánh đổi: quy trình khác với ví dụ của khoá học, không có down migration tự động và không
+biểu diễn trực tiếp polymorphic relationship. Quy trình vận hành migration nằm trong `CLAUDE.md`.
 
-**Decision.** Chặn hai lần, độc lập nhau.
+### Một hệ thống schema cho validation và serialization
 
-Tầng một, ở source: Prisma client `omit` password ngay khi query, chỉ query login mở lại bằng
-`omit: { password: false }` vì cần hash để `bcrypt.compare`.
+Dùng Zod cho environment configuration, request và response. Type được infer từ schema để tránh
+duy trì song song định nghĩa validation và định nghĩa TypeScript.
 
-Tầng hai, ở boundary: mỗi resource một response schema, khai qua
-`@SerializeOptions({ schema })`. `StandardSchemaSerializerInterceptor` parse response qua schema
-đó trước khi trả về. Schema vừa cắt field vừa bọc envelope:
+Đánh đổi: cách tổ chức khác với các ví dụ NestJS dùng class-validator trong khoá học.
 
-```ts
-z.object({ email: z.string(), username: z.string(), bio: z.string().nullable(),
-           image: z.string().nullable(), token: z.string() })
- .transform((user) => ({ user }))
-```
+### Bảo vệ sensitive data ở query layer và API boundary
 
-**Consequence.** Tầng hai là **allowlist** — field không khai trong schema thì bị Zod cắt, kể cả
-field mới thêm vào model sau này. Mạnh hơn cách denylist kiểu `@Exclude()`, vốn quên gắn là lộ.
-Không handler nào tự viết envelope.
+Password hash mặc định bị loại khỏi query result; chỉ luồng cần kiểm tra mật khẩu mới
+đọc nó. Tại API boundary, response schema chỉ cho phép các field được khai báo đi ra ngoài.
 
-Cần **hai response schema riêng cho article**: từ 2024-08-16 spec bỏ `body` khỏi list và feed
-response, chỉ `GET /articles/:slug` còn trả.
+Hai tầng có trách nhiệm riêng: giảm việc truyền sensitive data trong ứng dụng và giữ
+public contract ổn định khi model thay đổi. Đánh đổi là cần duy trì response schema riêng
+với persistence model.
 
-### 6.4 Polymorphic attachment · `PLANNED`
+### Polymorphic attachment và authorization theo owner
 
-**Context.** Attachment cần gắn được vào nhiều loại owner mà module `attachments` không phải
-biết đến chúng.
+Attachment liên kết với owner bằng type và ID, không có foreign key tới từng loại
+owner. Nhờ đó module `attachments` không cần biết các domain module sử dụng nó.
 
-**Decision.** `Attachment` mang `attachableType` + `attachableId`, primary key uuid,
-không foreign key.
+Owner module cung cấp authorization policy cho attachment của mình. `attachments` dùng policy
+đó mà không import ngược owner module, giữ dependency một chiều.
 
-**Consequence.** Thêm owner type mới không cần đổi schema. Đổi lại database không giữ referential
-integrity, nên hai việc phải làm ở application layer: xoá owner phải xoá attachment trong cùng
-transaction, và luôn batch load attachment thay vì query từng dòng.
+Đánh đổi: application chịu trách nhiệm kiểm tra owner, xoá attachment cùng transaction khi
+xoá owner và bảo đảm policy tương ứng được đăng ký.
 
-### 6.5 Attachment authorization · `PLANNED`
+Avatar dùng Attachment làm nguồn quản lý tệp, còn `User.image` giữ URL để đọc profile.
+Theo contract RealWorld, cập nhật profile cũng cho phép client đặt URL ảnh trực tiếp.
 
-**Context.** `GET /uploads/:id` phải check permission, nhưng `Attachment` không có foreign key nên
-`attachments` không tự biết owner là ai. Gọi thẳng `users` và `articles` sẽ tạo circular dependency.
+## 6. Phạm vi cập nhật tài liệu
 
-**Decision.** Đảo chiều dependency. `attachments` công bố interface `AttachmentPolicy`;
-mỗi owner module tự register policy của mình qua multi-provider token.
+Cập nhật tài liệu khi thay đổi thành phần hệ thống, trách nhiệm hoặc dependency giữa module,
+data relationship, API convention dùng chung hay design decision quan trọng.
 
-**Consequence.** Dependency vẫn một chiều. Thêm owner type mới chỉ cần thêm policy ở module mới,
-không sửa `attachments`. Đổi lại thêm một lớp indirection, và quên register policy chỉ lộ lúc runtime.
+Triển khai endpoint theo thiết kế đã thống nhất, thêm class hoặc hoàn thành milestone không
+tự tạo ra nhu cầu cập nhật tài liệu này.
 
-### 6.6 Zod thay class-validator
-
-**Context.** Hướng dẫn của module dạy `ValidationPipe` + class-validator + class-transformer.
-Repo đã có Zod sẵn để validate environment variable, nên đi theo hướng dẫn nghĩa là nuôi hai thư
-viện validation cho cùng một việc.
-
-**Decision.** Dùng Zod cho cả ba chỗ: environment, request, response. Gỡ `class-validator` và
-`class-transformer`.
-
-Zod 4 khai báo `~standard`, mà NestJS 12 nhận Standard Schema như công dân hạng nhất — schema gắn
-vào tham số bằng `@Body({ schema })`, `StandardSchemaValidationPipe` đăng ký global một lần đọc
-schema đó ra từ `ArgumentMetadata`. Không có adapter, không có pipe tự viết.
-
-**Consequence.** Một thư viện validation, một nguồn sự thật: `z.infer` sinh type từ schema thay
-vì phải nuôi song song class và decorator.
-
-Format lỗi field-keyed ở §2 rơi ra tự nhiên: Zod trả `issue.path` tách khỏi `issue.message`, nên
-`exceptionFactory` chỉ việc lấy segment cuối của path làm key. class-validator thì ngược lại — nó
-nhét tên field vào trong message (cả 101 template mặc định), hợp với format phẳng chứ không hợp
-field-keyed.
-
-`@nestjs/swagger` 12 có `StandardSchemaOpenApiConverter` đọc thẳng schema từ `@Body({ schema })`,
-nên OpenAPI vẫn tự sinh, không phải khai `@ApiBody` tay.
-
-Đổi lại: lệch tài liệu khoá học lần thứ hai, sau §6.1. Mọi ví dụ NestJS ngoài kia vẫn viết bằng
-class-validator, nên người đọc code lần đầu sẽ thấy lạ. `nestjs-zod` không dùng — peer dependency
-của nó dừng ở `@nestjs/common ^11`, và việc nó làm thì NestJS 12 đã làm sẵn.
+| Thông tin cần tra cứu | Nguồn |
+|---|---|
+| Field, type và constraint cụ thể | `prisma/schema.prisma` |
+| Request/response contract | API docs tại `/api/docs` |
+| Naming và coding convention | `docs/code-standards.md` |
+| Lệnh phát triển và quy trình migration | `CLAUDE.md` |
+| Dependency và phiên bản | `package.json` |
+| Scope và tiến độ triển khai | GitHub issues |
+| Workaround và chi tiết implementation | Code và comment tại nơi áp dụng |

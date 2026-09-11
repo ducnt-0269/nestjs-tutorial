@@ -1,103 +1,129 @@
 # Code Standards
 
----
+Tài liệu quy định coding convention và review workflow dùng chung cho project.
+Architecture và module responsibility nằm trong tài liệu system architecture; workaround
+của thư viện đặt cạnh code liên quan.
 
-## 1. Ngôn ngữ và style
+## 1. Language và tooling
 
-TypeScript theo [Google TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html).
+TypeScript theo Google TypeScript Style Guide. Dùng tiếng Anh cho code, comment, commit
+message và OpenAPI description. Nội dung trong `docs/`, `plans/` và `README.md` dùng tiếng
+Việt, giữ technical term bằng tiếng Anh. Nội dung bản dịch i18n dùng ngôn ngữ tương ứng.
 
-Bộ công cụ do `nest new` sinh ra: **oxlint** (không phải ESLint) và Prettier, test bằng
-**Vitest** (không phải Jest).
+Project dùng oxlint cho lint, Prettier cho formatting, Vitest và Supertest cho test.
+Script cụ thể được định nghĩa trong `package.json`.
 
-```
-npm run lint      # oxlint src/ test/
-npm run format    # Prettier ghi đè
-npm test          # Vitest
-npm run test:e2e  # Vitest, config riêng
-```
+| Command | Mục đích |
+|---|---|
+| `npm run lint` | Chạy oxlint trên `src/`, gồm type-aware check; warning làm command thất bại |
+| `npm run typecheck` | Kiểm tra TypeScript type |
+| `npm run format:check` | Kiểm tra formatting của TypeScript trong `src/` |
+| `npm run format` | Ghi lại formatting bằng Prettier |
+| `npm test` | Chạy test suite bằng Vitest |
+| `npm run build` | Kiểm tra application build |
 
----
+## 2. File naming và module organization
 
-## 2. Sunlint
+- File dùng **kebab-case**: `articles.service.ts`, `jwt-auth.guard.ts`.
+- Dùng suffix theo trách nhiệm: `.controller.ts`, `.service.ts`, `.module.ts`, `.guard.ts`,
+  `.interceptor.ts`, `.filter.ts`, `.pipe.ts`.
+- Zod schema dùng suffix **`.schema.ts`**. Type của dữ liệu đã validate lấy bằng `z.infer`
+  và khai cùng schema, tránh định nghĩa lại shape ở service.
+- Test dùng suffix **`.spec.ts`**, đặt cạnh code được test.
+- Mỗi file dưới 200 dòng. Khi vượt giới hạn, tách theo trách nhiệm.
+- Mỗi module có một thư mục. Cross-module dependency tuân theo module boundaries trong
+  tài liệu system architecture.
 
-Bắt buộc trước mỗi pull request. Không được merge khi còn rule mức `error`.
-Rule mức `warning` khuyến khích sửa.
+Project dùng ESM. Mọi relative import phải có extension **`.js`**, kể cả khi source là
+file `.ts`. Dùng `import.meta.dirname` khi cần đường dẫn thư mục của module.
 
-Cài dạng devDependency, **ghim cứng phiên bản** — không dùng `^`. Kết quả lint đính kèm
-pull request làm bằng chứng, nên phiên bản trôi giữa các lần chạy sẽ cho số liệu lệch.
-Đây là ngoại lệ duy nhất: mọi package khác dùng range bình thường.
+Không sửa generated Prisma Client trong `src/generated/prisma`. Thay đổi schema rồi chạy
+`npm run db:generate`.
 
-```jsonc
-"devDependencies": { "@sun-asterisk/sunlint": "<phiên bản chính xác, xem package.json>" },
-"scripts": {
-  "lint:sun":        "sunlint --all --input=src",
-  "lint:sun:report": "sunlint --all --input=src --output-summary=sunlint-report.json",
-  "lint:sun:pr":     "sunlint --all --changed-files"
-}
-```
+## 3. Database conventions
 
-Preset `recommended`. `lint:sun:report` xuất JSON có số error/warning, điểm chất lượng,
-tên nhánh và commit hash — dùng làm bằng chứng đính kèm.
+### Naming
 
-Sunlint **không thay thế** oxlint của dự án. Hai công cụ chạy song song, mục đích khác nhau:
-oxlint lúc viết code, Sunlint trước khi mở pull request. Sunlint gói sẵn ESLint trong
-`dependencies` của nó nên vẫn chạy được dù dự án không cài ESLint.
+| Thành phần | Convention | Ví dụ |
+|---|---|---|
+| Prisma model | Singular PascalCase | `User` |
+| Prisma field | camelCase | `createdAt` |
+| PostgreSQL table | Plural snake_case | `users` |
+| PostgreSQL column | snake_case | `created_at`, `email` |
 
-File cấu hình là **`.sunlint.json`** — đứng đầu thứ tự tìm kiếm của cả hai loader.
-Preset `recommended` chỉ có 3 rule ở mức error (S001, S002, S017 — đều là security),
-nên yêu cầu "0 error" là khả thi.
+Dùng `@@map` cho table và `@map` cho column khi tên trong Prisma khác tên trong database.
+Chỉ table dùng plural; column không cần chuyển thành plural.
 
----
+Giữ naming convention mặc định của Prisma cho index và constraint theo tên đã map.
+Ví dụ, unique index của `users.email` là `users_email_key`; unique index nhiều column có
+dạng `<table>_<column1>_<column2>_key`.
 
-## 3. Đặt tên và tổ chức file
+### Timestamp
 
-- Tên file **kebab-case**: `articles.service.ts`, `jwt-auth.guard.ts`
-- Theo quy ước hậu tố của NestJS: `.controller.ts`, `.service.ts`, `.module.ts`,
-  `.guard.ts`, `.interceptor.ts`, `.filter.ts`
-- Zod schema đặt hậu tố **`.schema.ts`**, không phải `.dto.ts` — không có DTO class nào
-  (`system-architecture.md` §6.6). Type dùng ở service lấy bằng `z.infer`, khai cùng file
-  với schema
-- Mỗi file **dưới 200 dòng**. Vượt thì tách theo trách nhiệm, không tách cho đủ số
-- Một module một thư mục, nội dung module không rò rỉ ra ngoài qua import chéo —
-  ranh giới phụ thuộc quy định ở `system-architecture.md` §3
+Mỗi model có `createdAt` và `updatedAt`, map sang `created_at` và `updated_at`.
+Dùng PostgreSQL **`TIMESTAMPTZ(3)`** qua `@db.Timestamptz(3)` để lưu thời điểm tuyệt đối
+với millisecond precision.
 
----
+- `createdAt` dùng `@default(now())`.
+- `updatedAt` dùng `@updatedAt`, được Prisma Client quản lý.
+- Raw SQL phải tự cung cấp `updated_at` khi insert và cập nhật giá trị này khi update;
+  `@updatedAt` không tạo database trigger.
 
-## 4. Commit
+Schema cụ thể nằm trong `prisma/schema.prisma`. Migration workflow và command nằm trong
+`CLAUDE.md`.
 
-[Conventional Commits](https://www.conventionalcommits.org/):
+## 4. Sunlint
 
-```
-feat:     tính năng mới
-fix:      sửa lỗi
-docs:     tài liệu
-refactor: đổi cấu trúc, không đổi hành vi
-test:     thêm hoặc sửa test
-chore:    build, dependency, cấu hình
-```
+Sunlint bắt buộc trước mỗi pull request và bổ sung cho oxlint. Không merge khi còn Sunlint
+error; warning cần được review để xác định có phù hợp với code và architecture hay không.
 
-Mỗi commit gói đúng một thay đổi logic. Không gộp nhiều việc không liên quan.
+Configuration nằm trong `.sunlint.json`, dùng preset `recommended`. Rule và exclusion lấy
+từ configuration, không duy trì một danh sách riêng trong tài liệu này.
 
-Không đưa secret vào repository: file `.env`, API key, thông tin kết nối database.
+| Command | Mục đích |
+|---|---|
+| `npm run lint:sun` | Chạy Sunlint trên source theo configuration |
+| `npm run lint:sun:report` | Xuất JSON report để đính kèm pull request |
+| `npm run lint:sun:pr` | Chạy trên changed files |
 
----
+Pin exact version của `@sun-asterisk/sunlint` trong devDependencies để kết quả giữa các lần
+review nhất quán. Các dependency khác dùng version range theo convention của project.
 
-## 5. Branch và pull request
+## 5. Commit
 
-Nhánh `feat/<milestone>-<slug>`, mở pull request vào `main`.
+Dùng Conventional Commits:
 
-Giữ mỗi pull request trong khoảng vài trăm dòng thay đổi. Pull request lớn khó review
-và dễ lọt lỗi.
+| Type | Khi dùng |
+|---|---|
+| `feat` | Thêm feature |
+| `fix` | Sửa bug |
+| `docs` | Thay đổi documentation |
+| `refactor` | Thay đổi cấu trúc, giữ nguyên behavior |
+| `test` | Thêm hoặc sửa test |
+| `chore` | Thay đổi build, dependency hoặc configuration |
 
-### Điều kiện merge
+Mỗi commit có một thay đổi logic rõ ràng. Không gộp thay đổi không liên quan.
+Không commit secret như `.env`, API key hoặc database credential.
 
-- Sunlint 0 error, đính kèm kết quả
-- `npm run lint` và test xanh
-- Đã tự review lại diff của chính mình
-- Có ít nhất một approve
+## 6. Branch và pull request
 
-### Thứ tự review
+Branch dùng dạng `feat/<milestone>-<slug>`, mở pull request vào `main`.
+Scope theo milestone issue; giữ diff tập trung, ưu tiên mỗi pull request khoảng vài trăm dòng.
 
-1. Yêu cầu Copilot review, xử lý hết comment
-2. Tự review lại toàn bộ diff
-3. Gửi reviewer
+### Merge requirements
+
+- Sunlint không có error, đính kèm kết quả.
+- Lint và test pass.
+- Đã self-review toàn bộ diff.
+- Có ít nhất một approval.
+
+### Review workflow
+
+1. Yêu cầu Copilot review và xử lý các comment.
+2. Self-review toàn bộ diff.
+3. Gửi reviewer.
+
+## 7. Phạm vi cập nhật tài liệu
+
+Cập nhật khi project thay đổi coding convention, tooling command hoặc review workflow.
+Feature mới tuân theo convention hiện có không cần bổ sung ghi chú vào tài liệu này.
