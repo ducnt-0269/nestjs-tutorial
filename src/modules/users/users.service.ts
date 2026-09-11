@@ -4,7 +4,6 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 
 type NewUser = Pick<User, 'email' | 'username' | 'password'>;
 export type SafeUser = Omit<User, 'password'>;
-// Here rather than in auth: the account is this module's concept.
 export type UserWithToken = SafeUser & { token: string };
 
 @Injectable()

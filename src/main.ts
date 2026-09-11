@@ -27,8 +27,7 @@ async function bootstrap(): Promise<void> {
     .setTitle('Medium Clone API')
     .setDescription('Backend API implementing the RealWorld specification')
     .setVersion('1.0')
-    // The spec sends the JWT as an Authorization header with the Token scheme,
-    // which OpenAPI models as an apiKey. Bearer would document the wrong header.
+    // The scheme is Token, not Bearer, so OpenAPI models it as an apiKey.
     .addApiKey(
       { type: 'apiKey', name: 'Authorization', in: 'header' },
       TOKEN_SCHEME,

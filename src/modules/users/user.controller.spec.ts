@@ -89,7 +89,6 @@ describe('GET /api/user', () => {
         username: 'jake',
         bio: null,
         image: null,
-        // The token the client presented, not a freshly minted one.
         token,
       },
     });
@@ -104,8 +103,7 @@ describe('GET /api/user', () => {
     expect(response.body).toEqual({ errors: { token: ['is invalid'] } });
   });
 
-  // Absent, malformed and expired share one answer: the client signs in again
-  // either way, and telling them apart only helps someone probing tokens.
+  // One answer for all three: the client signs in again either way.
   it('answers 401 to a token that is absent, malformed or expired', async () => {
     const tokens = [
       undefined,

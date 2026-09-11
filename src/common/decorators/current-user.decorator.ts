@@ -1,7 +1,6 @@
 import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
 import type { Request } from 'express';
 
-// What the strategy puts on the request once a token verifies.
 declare global {
   namespace Express {
     interface User {

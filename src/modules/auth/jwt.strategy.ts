@@ -5,8 +5,7 @@ import type { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { TOKEN_SCHEME } from '../../common/guards/jwt-auth.guard.js';
 
-// Reused inside validate: passport hands over the decoded payload only, and
-// the raw token has to reach the response as well.
+// Reused inside validate: passport hands over the decoded payload only.
 const extractToken = ExtractJwt.fromAuthHeaderWithScheme(TOKEN_SCHEME);
 
 @Injectable()
