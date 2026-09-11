@@ -101,6 +101,18 @@ describe('POST /api/users/login', () => {
     );
   });
 
+  it('mints a different token for each sign-in of the same account', async () => {
+    findUnique.mockResolvedValue(storedUser);
+    const credentials = { user: { email: 'jake@example.com', password } };
+
+    const first = await signIn(credentials).expect(200);
+    const second = await signIn(credentials).expect(200);
+
+    // Both sign-ins land in the same second, so only something unique to each
+    // token keeps revoking one of them from ending the other.
+    expect(first.body.user.token).not.toBe(second.body.user.token);
+  });
+
   it('looks the account up by lower-cased email and opts into the hash', async () => {
     findUnique.mockResolvedValue(storedUser);
 
