@@ -4,7 +4,7 @@ import type { PrismaPg } from '@prisma/adapter-pg';
 import { createPrismaAdapter } from './prisma-adapter.js';
 import { PrismaClient } from '../generated/prisma/client.js';
 
-// The class generic is what makes `prisma.user.*` result types drop `password`.
+// The class generic makes the generated result types drop the password field.
 const omit = { user: { password: true } } as const;
 type ClientOptions = { adapter: PrismaPg; omit: typeof omit };
 

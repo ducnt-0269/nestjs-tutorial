@@ -9,7 +9,7 @@ import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE, Reflector } from '@nestjs/core';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter.js';
 import { validationExceptionFactory } from './pipes/validation-exception.factory.js';
 
-// Registered as providers, not in main.ts, so tests import the same wiring.
+// Registered as providers rather than in the bootstrap, so tests import the same wiring.
 @Module({
   providers: [
     Logger,
