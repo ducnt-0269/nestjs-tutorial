@@ -14,7 +14,7 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor(configService: ConfigService) {
-    // Only a query with `omit: { password: false }` sees the hash (§6.3).
+    // Only a query with `omit: { password: false }` sees the hash (§5).
     super({ adapter: createPrismaAdapter(configService), omit });
   }
 
