@@ -10,3 +10,13 @@ export const userResponseSchema = z
     token: z.string(),
   })
   .transform((user) => ({ user }));
+
+export const userResponseExample = {
+  user: {
+    email: 'jake@example.com',
+    username: 'jake',
+    bio: null,
+    image: null,
+    token: '<jwt>',
+  },
+};
