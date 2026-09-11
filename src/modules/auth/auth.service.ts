@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { compare, hash, hashSync } from 'bcrypt';
@@ -42,8 +43,11 @@ export class AuthService {
     return { ...user, token: this.tokenFor(user.id) };
   }
 
-  // Id only, nothing that PUT /user could make stale. `sub` is a string (RFC 7519).
+  // Id only, nothing that PUT /user could make stale. The subject is a
+  // string per RFC 7519, and the identifier keeps two sign-ins of the same
+  // account within one second from minting the very same token, which
+  // revoking either one would otherwise end.
   private tokenFor(userId: number): string {
-    return this.jwt.sign({ sub: String(userId) });
+    return this.jwt.sign({ sub: String(userId), jti: randomUUID() });
   }
 }
