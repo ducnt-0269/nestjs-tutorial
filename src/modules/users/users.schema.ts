@@ -10,3 +10,15 @@ export const userResponseSchema = z
     token: z.string(),
   })
   .transform((user) => ({ user }));
+
+// One example for the OpenAPI document, shared by every endpoint that answers
+// with an account.
+export const userResponseExample = {
+  user: {
+    email: 'jake@example.com',
+    username: 'jake',
+    bio: null,
+    image: null,
+    token: '<jwt>',
+  },
+};

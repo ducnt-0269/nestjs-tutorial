@@ -1,0 +1,146 @@
+import 'reflect-metadata';
+import type { INestApplication } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { Test } from '@nestjs/testing';
+import { hashSync } from 'bcrypt';
+import request from 'supertest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+import { CommonModule } from '../../common/common.module.js';
+import { PrismaModule } from '../../prisma/prisma.module.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { AuthModule } from './auth.module.js';
+
+const secret = 'test-secret-'.padEnd(32, 'x');
+const password = 'secret123';
+const storedUser = {
+  id: 42,
+  email: 'jake@example.com',
+  username: 'jake',
+  password: hashSync(password, 10),
+  bio: null,
+  image: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+const invalid = { errors: { credentials: ['invalid'] } };
+
+describe('POST /api/users/login', () => {
+  let app: INestApplication;
+  let jwt: JwtService;
+  const findUnique = vi.fn();
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          ignoreEnvFile: true,
+          load: [() => ({ JWT_SECRET: secret, JWT_TTL_SECONDS: 3600 })],
+        }),
+        CommonModule,
+        PrismaModule,
+        AuthModule,
+      ],
+    })
+      .overrideProvider(PrismaService)
+      .useValue({ user: { findUnique } })
+      .compile();
+
+    app = moduleRef.createNestApplication();
+    app.setGlobalPrefix('/api');
+    await app.init();
+    jwt = app.get(JwtService);
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  beforeEach(() => {
+    findUnique.mockReset();
+  });
+
+  function signIn(body: object) {
+    return request(app.getHttpServer()).post('/api/users/login').send(body);
+  }
+
+  it('answers 200 with the user envelope and a token that verifies', async () => {
+    findUnique.mockResolvedValue(storedUser);
+
+    const response = await signIn({
+      user: { email: 'Jake@Example.com', password },
+    }).expect(200);
+
+    expect(response.body).toEqual({
+      user: {
+        email: 'jake@example.com',
+        username: 'jake',
+        bio: null,
+        image: null,
+        token: expect.any(String),
+      },
+    });
+    expect(jwt.verify<{ sub: string }>(response.body.user.token).sub).toBe(
+      '42',
+    );
+  });
+
+  it('looks the account up by lower-cased email and opts into the hash', async () => {
+    findUnique.mockResolvedValue(storedUser);
+
+    await signIn({ user: { email: 'Jake@Example.com', password } });
+
+    expect(findUnique).toHaveBeenCalledWith({
+      where: { email: 'jake@example.com' },
+      omit: { password: false },
+    });
+  });
+
+  it('answers a wrong password and an unknown email identically', async () => {
+    findUnique.mockResolvedValue(storedUser);
+    const wrongPassword = await signIn({
+      user: { email: 'jake@example.com', password: 'not the password' },
+    }).expect(401);
+
+    findUnique.mockResolvedValue(null);
+    const unknownEmail = await signIn({
+      user: { email: 'nobody@example.com', password },
+    }).expect(401);
+
+    expect(wrongPassword.body).toEqual(invalid);
+    expect(unknownEmail.body).toEqual(invalid);
+  });
+
+  it('spends the same work on an unknown email as on a wrong password', async () => {
+    findUnique.mockResolvedValue(null);
+
+    const started = performance.now();
+    await signIn({ user: { email: 'nobody@example.com', password } }).expect(
+      401,
+    );
+
+    // A bcrypt comparison at cost 10 takes tens of milliseconds; skipping it
+    // would answer in about one. The bound is loose on purpose — it only has to
+    // tell the dummy-hash branch apart from an early return.
+    expect(performance.now() - started).toBeGreaterThan(20);
+  });
+
+  it('answers 422 keyed by field when the body is invalid', async () => {
+    const response = await signIn({ user: {} }).expect(422);
+
+    expect(response.body).toEqual({
+      errors: { email: ["can't be blank"], password: ["can't be blank"] },
+    });
+    expect(findUnique).not.toHaveBeenCalled();
+  });
+});
