@@ -1,17 +1,24 @@
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import type { Response } from 'express';
 import { AppModule } from './app.module.js';
 
-const API_PREFIX = 'api';
-const DOCS_PATH = `/${API_PREFIX}/docs`;
+// The leading slash matters: Nest mounts its 404 handler with
+// `express.use(prefix, ...)` verbatim, and Express 5 never matches a mount
+// path without one, so every unknown route would bypass the exception filter.
+const API_PREFIX = '/api';
+const DOCS_PATH = `${API_PREFIX}/docs`;
 const OPENAPI_JSON_PATH = `${DOCS_PATH}-json`;
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix(API_PREFIX);
+  app.enableCors({
+    origin: app.get(ConfigService).getOrThrow<string[]>('CORS_ORIGIN'),
+  });
   // Lets PrismaService and RedisService close their connections on SIGTERM.
   app.enableShutdownHooks();
 

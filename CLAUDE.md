@@ -2,8 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Medium clone backend API following the RealWorld specification. Delivered as ten pull requests;
-currently at milestone 1 (project foundation), no business behaviour yet.
+Medium clone backend API following the RealWorld specification. Delivered as ten pull requests,
+one per milestone issue; `gh issue list` shows which are done.
 
 ## Commands
 
@@ -13,9 +13,14 @@ docker compose up -d         # PostgreSQL + Redis
 npm run start:dev
 npm test                     # unit (Vitest)
 npm run lint                 # oxlint
+npm run typecheck            # only step that type-checks *.spec.ts; nest build skips them
+npm run format:check         # Prettier — CI gate
 npm run lint:sun             # Sunlint — must report 0 errors before any PR
 npm run db:generate          # regenerate Prisma Client after a schema change
 ```
+
+On a fresh checkout run `npm run db:generate` first: typecheck and oxlint's type-aware rules
+both need the generated client.
 
 ## ESM
 
@@ -34,6 +39,12 @@ Use `import.meta.dirname`, not `__dirname`.
 `nest new` scaffolds **NestJS 12 + TypeScript 6 + oxlint + Vitest**. Not Jest, not ESLint —
 there is no `eslint.config.js`. A unit test exercising decorators needs
 `import 'reflect-metadata';` at the top; Nest loads it itself at runtime.
+
+Validation is **Zod 4** (`z.email()`, `z.url({ protocol })`, `error:` callbacks). Zod 3 syntax
+fails typecheck. `class-validator` is installed but unused; leave it.
+
+Sunlint reads a comment containing a file name or a backticked identifier as commented-out
+code. Write comments in plain prose: "the bootstrap", not `main.ts`.
 
 ## Prisma 7
 
