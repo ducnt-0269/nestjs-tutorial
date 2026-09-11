@@ -8,9 +8,17 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { Prisma } from '../../generated/prisma/client.js';
-import { type ErrorsEnvelope, isErrorsEnvelope } from '../errors-envelope.js';
 
 const UNIQUE_VIOLATION = 'P2002';
+
+/**
+ * The one error shape the API returns, whatever the status
+ * (docs/system-architecture.md §2). The key names what the error is about:
+ * a field, `credentials`, `token`, a resource name.
+ */
+interface ErrorsBody {
+  errors: Record<string, string[]>;
+}
 
 interface UniqueViolationMeta {
   driverAdapterError?: {
@@ -24,7 +32,7 @@ interface UniqueViolationMeta {
  * errors, so the 500 branch has to log them itself.
  */
 @Catch()
-export class ErrorsEnvelopeFilter implements ExceptionFilter {
+export class AllExceptionsFilter implements ExceptionFilter {
   constructor(private readonly logger: Logger) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -41,12 +49,12 @@ export class ErrorsEnvelopeFilter implements ExceptionFilter {
 
   private toResponse(exception: unknown): {
     status: number;
-    body: ErrorsEnvelope;
+    body: ErrorsBody;
   } {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const payload = exception.getResponse();
-      if (isErrorsEnvelope(payload)) return { status, body: payload };
+      if (isErrorsBody(payload)) return { status, body: payload };
       return { status, body: envelope('request', exception.message) };
     }
 
@@ -65,7 +73,7 @@ export class ErrorsEnvelopeFilter implements ExceptionFilter {
       return { status, body: envelope('request', messageOf(exception)) };
     }
 
-    this.logger.error(exception, ErrorsEnvelopeFilter.name);
+    this.logger.error(exception, AllExceptionsFilter.name);
     return {
       status: HttpStatus.INTERNAL_SERVER_ERROR,
       body: envelope('server', 'internal error'),
@@ -73,8 +81,16 @@ export class ErrorsEnvelopeFilter implements ExceptionFilter {
   }
 }
 
-function envelope(key: string, message: string): ErrorsEnvelope {
+function envelope(key: string, message: string): ErrorsBody {
   return { errors: { [key]: [message] } };
+}
+
+function isErrorsBody(value: unknown): value is ErrorsBody {
+  if (typeof value !== 'object' || value === null) return false;
+  const errors = (value as { errors?: unknown }).errors;
+  return (
+    typeof errors === 'object' && errors !== null && !Array.isArray(errors)
+  );
 }
 
 function isUniqueViolation(

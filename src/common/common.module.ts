@@ -6,7 +6,7 @@ import {
   StandardSchemaValidationPipe,
 } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE, Reflector } from '@nestjs/core';
-import { ErrorsEnvelopeFilter } from './filters/errors-envelope.filter.js';
+import { AllExceptionsFilter } from './filters/all-exceptions.filter.js';
 import { validationExceptionFactory } from './pipes/validation-exception.factory.js';
 
 /**
@@ -24,7 +24,7 @@ import { validationExceptionFactory } from './pipes/validation-exception.factory
         exceptionFactory: validationExceptionFactory,
       }),
     },
-    { provide: APP_FILTER, useClass: ErrorsEnvelopeFilter },
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
     {
       // The interceptor takes Reflector untyped, so DI cannot resolve it by
       // itself.

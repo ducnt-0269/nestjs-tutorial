@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Prisma } from '../../generated/prisma/client.js';
-import { ErrorsEnvelopeFilter } from './errors-envelope.filter.js';
+import { AllExceptionsFilter } from './all-exceptions.filter.js';
 
 function mockResponse(headersSent = false) {
   return {
@@ -30,7 +30,7 @@ function run(
   logger = new Logger(),
 ): { status: number; body: unknown } {
   const response = mockResponse();
-  new ErrorsEnvelopeFilter(logger).catch(exception, hostFor(response));
+  new AllExceptionsFilter(logger).catch(exception, hostFor(response));
 
   return {
     status: response.status.mock.calls[0]?.[0] as number,
@@ -58,12 +58,12 @@ function uniqueViolation(index: string, table = 'users'): Error {
   });
 }
 
-describe('ErrorsEnvelopeFilter', () => {
+describe('AllExceptionsFilter', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('passes through an HttpException that already carries an errors envelope', () => {
+  it('passes through an HttpException that already carries an errors body', () => {
     const payload = { errors: { email: ["can't be blank"] } };
 
     expect(run(new UnprocessableEntityException(payload))).toEqual({
@@ -114,13 +114,13 @@ describe('ErrorsEnvelopeFilter', () => {
       status: 500,
       body: { errors: { server: ['internal error'] } },
     });
-    expect(error).toHaveBeenCalledWith(boom, 'ErrorsEnvelopeFilter');
+    expect(error).toHaveBeenCalledWith(boom, 'AllExceptionsFilter');
   });
 
   it('only ends the response when headers were already sent', () => {
     const response = mockResponse(true);
 
-    new ErrorsEnvelopeFilter(new Logger()).catch(
+    new AllExceptionsFilter(new Logger()).catch(
       new Error('mid-stream'),
       hostFor(response),
     );

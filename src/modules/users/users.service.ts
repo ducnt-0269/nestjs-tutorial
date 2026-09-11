@@ -11,7 +11,7 @@ export class UsersService {
 
   /**
    * A duplicate email or username surfaces as Prisma P2002, which
-   * ErrorsEnvelopeFilter turns into 409. Checking first would only add a
+   * AllExceptionsFilter turns into 409. Checking first would only add a
    * race between the check and the insert.
    */
   create(data: NewUser): Promise<SafeUser> {
