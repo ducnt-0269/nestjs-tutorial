@@ -93,7 +93,9 @@ describe('POST /api/users', () => {
     const response = await request(app.getHttpServer())
       .post('/api/users')
       .send(validBody)
-      .expect(201);
+      .expect(201)
+      // The response carries a token, so it must not be cached anywhere.
+      .expect('Cache-Control', 'no-store');
 
     expect(response.body).toEqual({
       user: {

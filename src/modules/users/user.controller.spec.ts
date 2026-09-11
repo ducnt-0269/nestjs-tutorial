@@ -80,7 +80,10 @@ describe('GET /api/user', () => {
     findUnique.mockResolvedValue(storedUser);
     const token = jwt.sign({ sub: '42' });
 
-    const response = await read(token).expect(200);
+    const response = await read(token)
+      .expect(200)
+      // The response carries a token, so it must not be cached anywhere.
+      .expect('Cache-Control', 'no-store');
 
     expect(response.body).toEqual({
       user: {
@@ -93,6 +96,14 @@ describe('GET /api/user', () => {
       },
     });
     expect(findUnique).toHaveBeenCalledWith({ where: { id: 42 } });
+  });
+
+  it('answers 401 when the account behind a valid token is gone', async () => {
+    findUnique.mockResolvedValue(null);
+
+    const response = await read(jwt.sign({ sub: '42' })).expect(401);
+
+    expect(response.body).toEqual({ errors: { token: ['is invalid'] } });
   });
 
   // The three rejections below are read out of passport's info argument, so

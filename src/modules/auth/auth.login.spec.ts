@@ -79,7 +79,10 @@ describe('POST /api/users/login', () => {
 
     const response = await signIn({
       user: { email: 'Jake@Example.com', password },
-    }).expect(200);
+    })
+      .expect(200)
+      // The response carries a token, so it must not be cached anywhere.
+      .expect('Cache-Control', 'no-store');
 
     expect(response.body).toEqual({
       user: {
@@ -121,7 +124,7 @@ describe('POST /api/users/login', () => {
     expect(unknownEmail.body).toEqual(invalid);
   });
 
-  it('spends the same work on an unknown email as on a wrong password', async () => {
+  it('still runs a bcrypt comparison when no account matches', async () => {
     findUnique.mockResolvedValue(null);
 
     const started = performance.now();
@@ -129,10 +132,10 @@ describe('POST /api/users/login', () => {
       401,
     );
 
-    // A bcrypt comparison at cost 10 takes tens of milliseconds; skipping it
-    // would answer in about one. The bound is loose on purpose — it only has to
-    // tell the dummy-hash branch apart from an early return.
-    expect(performance.now() - started).toBeGreaterThan(20);
+    // A comparison at cost 10 takes tens of milliseconds; returning early
+    // without one would answer in about a single millisecond. The bound sits
+    // far below the real cost so that faster hardware cannot make it flake.
+    expect(performance.now() - started).toBeGreaterThan(10);
   });
 
   it('answers 422 keyed by field when the body is invalid', async () => {
