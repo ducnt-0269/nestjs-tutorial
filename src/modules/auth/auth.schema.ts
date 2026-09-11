@@ -14,12 +14,16 @@ export const registerSchema = z.object({
           error: (issue) => (issue.input === undefined ? blank : 'is invalid'),
         })
         .toLowerCase(),
-      // bcrypt ignores everything past 72 bytes, so a longer password would
-      // hash the same as its prefix without anyone noticing.
+      // bcrypt ignores everything past 72 *bytes*, so a longer password would
+      // hash the same as its prefix without anyone noticing. Counted in bytes,
+      // not characters: `.max()` would let 36 × 'é' plus anything through.
       password: z
         .string({ error: blank })
         .min(8, 'must be at least 8 characters long')
-        .max(72, 'must be at most 72 characters long'),
+        .refine(
+          (value) => Buffer.byteLength(value, 'utf8') <= 72,
+          'must be at most 72 bytes long',
+        ),
     },
     { error: blank },
   ),

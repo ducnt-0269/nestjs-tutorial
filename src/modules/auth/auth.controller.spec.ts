@@ -140,14 +140,17 @@ describe('POST /api/users', () => {
   });
 
   it('rejects a password bcrypt would silently truncate', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/api/users')
-      .send({ user: { ...validBody.user, password: 'x'.repeat(73) } })
-      .expect(422);
+    // 37 characters but 73 bytes: 'é' is two bytes in UTF-8.
+    for (const password of ['x'.repeat(73), 'é'.repeat(36) + 'x']) {
+      const response = await request(app.getHttpServer())
+        .post('/api/users')
+        .send({ user: { ...validBody.user, password } })
+        .expect(422);
 
-    expect(response.body).toEqual({
-      errors: { password: ['must be at most 72 characters long'] },
-    });
+      expect(response.body).toEqual({
+        errors: { password: ['must be at most 72 bytes long'] },
+      });
+    }
   });
 
   it('reports a missing email as blank rather than invalid', async () => {
