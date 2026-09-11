@@ -1,15 +1,6 @@
 import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
 import type { Request } from 'express';
 
-declare global {
-  namespace Express {
-    interface User {
-      id: number;
-      token: string;
-    }
-  }
-}
-
 export const CurrentUser = createParamDecorator(
   (_data: unknown, context: ExecutionContext): Express.User => {
     // Only reachable behind the guard, which rejects a request without a caller.
