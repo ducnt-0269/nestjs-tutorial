@@ -8,7 +8,7 @@ one per milestone issue; `gh issue list` shows which are done.
 ## Commands
 
 ```bash
-nvm use                      # Node 24, per .nvmrc
+nvm use                      # Node 25, per .nvmrc
 docker compose up -d         # PostgreSQL + Redis
 npm run start:dev
 npm test                     # unit (Vitest)

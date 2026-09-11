@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Allowlist: fields absent here never leave the API (§6.3).
+// Allowlist: fields absent here never leave the API (§5).
 export const userResponseSchema = z
   .object({
     email: z.string(),

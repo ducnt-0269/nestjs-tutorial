@@ -76,7 +76,8 @@ cung cấp data access. Validation và serialization là quy tắc chung tại A
 | Nguyên tắc | Thiết kế |
 |---|---|
 | Routing | API dùng prefix `/api` |
-| Authentication | JWT qua header `Authorization: Token <jwt>`; Redis lưu state cho token revocation |
+| Authentication | JWT qua header `Authorization: Token <jwt>`; Redis lưu state cho token revocation. Guard kiểm tra token thuộc request pipeline dùng chung, strategy do `auth` đăng ký |
+| Token trong response | Endpoint trả về tài khoản kèm token trả lại đúng token client gửi lên, không phát hành token mới; mỗi lần đăng nhập vì vậy chỉ tồn tại một token và thao tác thu hồi kết thúc trọn session |
 | Authorization | Chỉ author được sửa hoặc xoá bài viết và bình luận của mình |
 | Optional authentication | Một số endpoint cho phép không đăng nhập; dữ liệu quan hệ như `following` và `favorited` phụ thuộc người xem |
 | Response envelope | Dữ liệu bọc trong root key của resource; response schema xác định field được công khai |

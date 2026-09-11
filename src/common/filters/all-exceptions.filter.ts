@@ -13,7 +13,7 @@ const UNIQUE_VIOLATION = 'P2002';
 
 /**
  * The one error shape the API returns, whatever the status
- * (docs/system-architecture.md §2). The key names what the error is about:
+ * (docs/system-architecture.md §4). The key names what the error is about:
  * a field, `credentials`, `token`, a resource name.
  */
 interface ErrorsBody {
@@ -107,8 +107,8 @@ function isUniqueViolation(
  * thing adapter-pg passes on is the violated index name, even though the
  * documentation still describes `target`. Open upstream since 2025-10:
  * https://github.com/prisma/prisma/issues/28281 (#28953 is the P2002-specific
- * duplicate). Index names follow `<table>_<column>_key` (docs/system-architecture.md
- * §4), so the column is what sits between. Once the issue is fixed this
+ * duplicate). Index names follow `<table>_<column>_key` (docs/code-standards.md
+ * §3), so the column is what sits between. Once the issue is fixed this
  * function collapses to `meta.target[0]`.
  */
 function violatedField(
