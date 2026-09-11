@@ -10,14 +10,12 @@ describe('JwtAuthGuard', () => {
   it('passes an error from the strategy on rather than calling the token bad', () => {
     const failure = new Error('the blacklist is unreachable');
 
-    expect(() => guard.handleRequest(failure, false, undefined)).toThrow(
-      failure,
-    );
+    expect(() => guard.handleRequest(failure, false)).toThrow(failure);
   });
 
   it('answers a verified caller with that caller', () => {
     const caller = { id: 42, token: 'a.b.c' };
 
-    expect(guard.handleRequest(null, caller, undefined)).toBe(caller);
+    expect(guard.handleRequest(null, caller)).toBe(caller);
   });
 });

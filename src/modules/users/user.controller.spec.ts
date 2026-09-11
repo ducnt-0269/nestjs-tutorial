@@ -104,27 +104,21 @@ describe('GET /api/user', () => {
     expect(response.body).toEqual({ errors: { token: ['is invalid'] } });
   });
 
-  // The three rejections below pin passport's own wording in place.
-  it('answers 401 when the header is absent', async () => {
-    const response = await read().expect(401);
+  // Absent, malformed and expired share one answer: the client signs in again
+  // either way, and telling them apart only helps someone probing tokens.
+  it('answers 401 to a token that is absent, malformed or expired', async () => {
+    const tokens = [
+      undefined,
+      'not-a-token',
+      jwt.sign({ sub: '42' }, { expiresIn: '-1s' }),
+    ];
 
-    expect(response.body).toEqual({ errors: { token: ['is missing'] } });
-    expect(findUnique).not.toHaveBeenCalled();
-  });
+    for (const token of tokens) {
+      const response = await read(token).expect(401);
 
-  it('answers 401 when the token is not a JWT this server signed', async () => {
-    const response = await read('not-a-token').expect(401);
+      expect(response.body).toEqual({ errors: { token: ['is invalid'] } });
+    }
 
-    expect(response.body).toEqual({ errors: { token: ['is invalid'] } });
-    expect(findUnique).not.toHaveBeenCalled();
-  });
-
-  it('answers 401 when the token has expired', async () => {
-    const expired = jwt.sign({ sub: '42' }, { expiresIn: '-1s' });
-
-    const response = await read(expired).expect(401);
-
-    expect(response.body).toEqual({ errors: { token: ['has expired'] } });
     expect(findUnique).not.toHaveBeenCalled();
   });
 

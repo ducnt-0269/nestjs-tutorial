@@ -33,7 +33,7 @@ export class UserController {
   @ApiSecurity(TOKEN_SCHEME)
   @ApiOkResponse({ schema: { example: userResponseExample } })
   @ApiUnauthorizedResponse({
-    schema: { example: { errors: { token: ['is missing'] } } },
+    schema: { example: { errors: { token: ['is invalid'] } } },
   })
   @NoStore()
   @SerializeOptions({ schema: userResponseSchema })
