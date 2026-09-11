@@ -6,7 +6,7 @@ Chỉ làm API, không có giao diện.
 
 ## Yêu cầu
 
-- Node.js 24 (dùng `nvm use` — phiên bản ghi trong `.nvmrc`)
+- Node.js 25 (dùng `nvm use` — phiên bản ghi trong `.nvmrc`)
 - Docker và Docker Compose
 
 ## Chạy lần đầu
