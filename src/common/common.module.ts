@@ -9,11 +9,7 @@ import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE, Reflector } from '@nestjs/core';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter.js';
 import { validationExceptionFactory } from './pipes/validation-exception.factory.js';
 
-/**
- * The three components every request passes through
- * (docs/system-architecture.md §5). Registered as providers rather than in
- * main.ts so a test application can import exactly what production runs.
- */
+// Registered as providers, not in main.ts, so tests import the same wiring.
 @Module({
   providers: [
     Logger,
@@ -26,8 +22,7 @@ import { validationExceptionFactory } from './pipes/validation-exception.factory
     },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
     {
-      // The interceptor takes Reflector untyped, so DI cannot resolve it by
-      // itself.
+      // Its constructor types Reflector as `any`, so DI needs a factory.
       provide: APP_INTERCEPTOR,
       useFactory: (reflector: Reflector) =>
         new StandardSchemaSerializerInterceptor(reflector),

@@ -26,17 +26,6 @@ async function bootstrap(): Promise<void> {
     .setTitle('Medium Clone API')
     .setDescription('Backend API implementing the RealWorld specification')
     .setVersion('1.0')
-    // `Authorization: Token <jwt>` is not a Bearer scheme, so it is declared
-    // as an API key rather than through addBearerAuth().
-    .addApiKey(
-      {
-        type: 'apiKey',
-        in: 'header',
-        name: 'Authorization',
-        description: 'Token <jwt>',
-      },
-      'Token',
-    )
     .build();
 
   // @nestjs/swagger builds the OpenAPI document from the decorators; Scalar only

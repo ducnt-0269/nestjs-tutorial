@@ -22,10 +22,7 @@ export class AuthService {
     return { ...user, token: this.tokenFor(user.id) };
   }
 
-  /**
-   * The payload carries the id and nothing else: anything more would go
-   * stale the moment PUT /user changes it. `sub` is a string by RFC 7519.
-   */
+  // Id only, nothing that PUT /user could make stale. `sub` is a string (RFC 7519).
   private tokenFor(userId: number): string {
     return this.jwt.sign({ sub: String(userId) });
   }

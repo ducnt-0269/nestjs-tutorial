@@ -9,11 +9,7 @@ export type SafeUser = Omit<User, 'password'>;
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * A duplicate email or username surfaces as Prisma P2002, which
-   * AllExceptionsFilter turns into 409. Checking first would only add a
-   * race between the check and the insert.
-   */
+  // Duplicates surface as P2002 → 409; a check-then-insert would only add a race.
   create(data: NewUser): Promise<SafeUser> {
     return this.prisma.user.create({ data });
   }
