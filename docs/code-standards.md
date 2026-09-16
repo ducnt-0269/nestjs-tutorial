@@ -22,7 +22,9 @@ Script cụ thể được định nghĩa trong `package.json`.
 | `npm test` | Chạy test suite bằng Vitest |
 | `npm run build` | Kiểm tra application build |
 
-## 2. File naming và module organization
+## 2. Naming và module organization
+
+### File
 
 - File dùng **kebab-case**: `articles.service.ts`, `jwt-auth.guard.ts`.
 - Dùng suffix theo trách nhiệm: `.controller.ts`, `.service.ts`, `.module.ts`, `.guard.ts`,
@@ -39,6 +41,26 @@ file `.ts`. Dùng `import.meta.dirname` khi cần đường dẫn thư mục c�
 
 Không sửa generated Prisma Client trong `src/generated/prisma`. Thay đổi schema rồi chạy
 `npm run db:generate`.
+
+### Identifier
+
+| Thành phần | Convention | Ví dụ |
+|---|---|---|
+| Class | PascalCase, suffix nói vai trò | `UsersService`, `JwtAuthGuard` |
+| Type, interface | PascalCase, không tiền tố `I` | `SafeUser`, `ErrorsBody` |
+| Biến, property, method | camelCase | `currentUser`, `tokenFor` |
+| Hằng khai ở module-level | SCREAMING_SNAKE_CASE | `SALT_ROUNDS`, `TOKEN_SCHEME` |
+| Property nhận qua DI | camelCase của class được inject | `usersService`, `prismaService` |
+| Hàm trả boolean | tiền tố `is` hoặc `has` | `isErrorsBody`, `isUniqueViolation` |
+
+Service của chính module đặt tên theo generator của NestJS: `nest g resource` sinh ra
+`usersService: UsersService`. Dự án mở rộng công thức đó cho mọi provider class được inject.
+Client thô lấy qua injection token là ngoại lệ, vì nó không phải provider class: trong service
+bọc nó, tên nói tầng thay vì nói class, như `client: Redis` trong `RedisService`.
+
+Method ném `HttpException` mang tên hẹp đúng bằng ngữ cảnh của exception. `currentUser` ném
+401 là hợp lý vì tên đã khoá vào người đang đăng nhập; đặt tên rộng như `findOrFail` thì
+caller sau sẽ nhận 401 ở chỗ đáng lẽ phải là 404.
 
 ## 3. Database conventions
 
