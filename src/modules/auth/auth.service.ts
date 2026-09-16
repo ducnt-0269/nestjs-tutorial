@@ -16,18 +16,20 @@ const INVALID_CREDENTIALS = { errors: { credentials: ['invalid'] } };
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly users: UsersService,
-    private readonly jwt: JwtService,
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async register(input: RegisterInput): Promise<UserWithToken> {
     const password = await hash(input.password, SALT_ROUNDS);
-    const user = await this.users.create({ ...input, password });
+    const user = await this.usersService.create({ ...input, password });
     return { ...user, token: this.tokenFor(user.id) };
   }
 
   async login(input: LoginInput): Promise<UserWithToken> {
-    const account = await this.users.findByEmailWithPassword(input.email);
+    const account = await this.usersService.findByEmailWithPassword(
+      input.email,
+    );
     const matches = await compare(
       input.password,
       account?.password ?? NO_ACCOUNT_HASH,
@@ -44,6 +46,6 @@ export class AuthService {
 
   // Id only, nothing that PUT /user could make stale. `sub` is a string (RFC 7519).
   private tokenFor(userId: number): string {
-    return this.jwt.sign({ sub: String(userId) });
+    return this.jwtService.sign({ sub: String(userId) });
   }
 }

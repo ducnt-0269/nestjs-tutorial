@@ -19,7 +19,7 @@ import { type UserWithToken, UsersService } from './users.service.js';
 @ApiTags('user')
 @Controller('user')
 export class UserController {
-  constructor(private readonly users: UsersService) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Get()
   @UseGuards(JwtAuthGuard)
@@ -32,7 +32,7 @@ export class UserController {
   @NoStore()
   @SerializeOptions({ schema: userResponseSchema })
   async current(@CurrentUser() caller: Express.User): Promise<UserWithToken> {
-    const user = await this.users.currentUser(caller.id);
+    const user = await this.usersService.currentUser(caller.id);
 
     // The presented token, not a new one: one sign-in, one token to revoke.
     return { ...user, token: caller.token };

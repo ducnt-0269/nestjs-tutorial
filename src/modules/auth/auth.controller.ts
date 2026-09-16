@@ -33,7 +33,7 @@ import { AuthService } from './auth.service.js';
 @ApiTags('users')
 @Controller('users')
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post()
   @ApiOperation({ summary: 'Register a new account' })
@@ -49,7 +49,7 @@ export class AuthController {
   register(
     @Body({ schema: registerSchema }) body: RegisterBody,
   ): Promise<UserWithToken> {
-    return this.auth.register(body.user);
+    return this.authService.register(body.user);
   }
 
   @Post('login')
@@ -68,6 +68,6 @@ export class AuthController {
   login(
     @Body({ schema: loginSchema }) body: LoginBody,
   ): Promise<UserWithToken> {
-    return this.auth.login(body.user);
+    return this.authService.login(body.user);
   }
 }
