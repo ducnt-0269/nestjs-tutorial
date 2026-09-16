@@ -123,14 +123,17 @@ function violatedField(
   return index.slice(prefix.length).replace(/_key$/, '') || 'body';
 }
 
+// body-parser uses expose to mark messages safe for clients; status alone is insufficient.
 function httpStatusOf(exception: unknown): number | undefined {
   if (typeof exception !== 'object' || exception === null) return undefined;
-  const { status, statusCode } = exception as {
+  const { status, statusCode, expose } = exception as {
     status?: unknown;
     statusCode?: unknown;
+    expose?: unknown;
   };
+  if (expose !== true) return undefined;
   const candidate = status ?? statusCode;
-  return typeof candidate === 'number' && candidate >= 400 && candidate < 600
+  return typeof candidate === 'number' && candidate >= 400 && candidate < 500
     ? candidate
     : undefined;
 }

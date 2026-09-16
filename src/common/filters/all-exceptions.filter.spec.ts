@@ -93,15 +93,33 @@ describe('AllExceptionsFilter', () => {
     });
   });
 
-  it('keeps the status of a non-Nest error that carries one, such as malformed JSON', () => {
+  it('keeps the status of a non-Nest error that says it is safe to show', () => {
+    // Matches the error body-parser raises for malformed JSON.
     const parseError = Object.assign(new SyntaxError('Unexpected token'), {
       status: 400,
+      expose: true,
       type: 'entity.parse.failed',
     });
 
     expect(run(parseError)).toEqual({
       status: 400,
       body: { errors: { request: ['Unexpected token'] } },
+    });
+  });
+
+  it('hides a failure that carries a status but never said it was safe', () => {
+    const logger = new Logger();
+    vi.spyOn(logger, 'error').mockImplementation(() => undefined);
+    const upstream = Object.assign(
+      new Error('pool exhausted at 10.0.0.1:5432'),
+      {
+        statusCode: 503,
+      },
+    );
+
+    expect(run(upstream, logger)).toEqual({
+      status: 500,
+      body: { errors: { server: ['internal error'] } },
     });
   });
 
