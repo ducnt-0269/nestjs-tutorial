@@ -17,6 +17,11 @@ import {
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+import {
+  fieldBody,
+  invalidCredentialsBody,
+  invalidTokenBody,
+} from '../../common/errors/api-error.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { NoStore } from '../../common/decorators/no-store.decorator.js';
 import {
@@ -51,10 +56,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Register a new account' })
   @ApiCreatedResponse({ schema: { example: userResponseExample } })
   @ApiUnprocessableEntityResponse({
-    schema: { example: { errors: { email: ["can't be blank"] } } },
+    schema: { example: fieldBody('email', "can't be blank") },
   })
   @ApiConflictResponse({
-    schema: { example: { errors: { email: ['has already been taken'] } } },
+    schema: { example: fieldBody('email', 'has already been taken') },
   })
   @NoStore()
   @SerializeOptions({ schema: userResponseSchema })
@@ -70,10 +75,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Sign in to an existing account' })
   @ApiOkResponse({ schema: { example: userResponseExample } })
   @ApiUnauthorizedResponse({
-    schema: { example: { errors: { credentials: ['invalid'] } } },
+    schema: { example: invalidCredentialsBody },
   })
   @ApiUnprocessableEntityResponse({
-    schema: { example: { errors: { email: ["can't be blank"] } } },
+    schema: { example: fieldBody('email', "can't be blank") },
   })
   @NoStore()
   @SerializeOptions({ schema: userResponseSchema })
@@ -91,7 +96,7 @@ export class AuthController {
   @ApiNoContentResponse()
   @ApiSecurity(TOKEN_SCHEME)
   @ApiUnauthorizedResponse({
-    schema: { example: { errors: { token: ['is invalid'] } } },
+    schema: { example: invalidTokenBody },
   })
   logout(@CurrentUser() caller: Express.User): Promise<void> {
     return this.tokenRevocationService.revoke(caller.token);

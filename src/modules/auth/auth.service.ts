@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { invalidCredentials } from '../../common/errors/api-error.js';
 import { type UserWithToken, UsersService } from '../users/users.service.js';
 import type { LoginInput, RegisterInput } from './auth.schema.js';
-
-const INVALID_CREDENTIALS = { errors: { credentials: ['invalid'] } };
 
 // Issues and refuses tokens. Storing and checking a password belongs to the
 // module that owns the column, so no hash ever reaches this file.
@@ -27,7 +26,7 @@ export class AuthService {
     );
 
     if (!user) {
-      throw new UnauthorizedException(INVALID_CREDENTIALS);
+      throw invalidCredentials();
     }
 
     return { ...user, token: this.tokenFor(user.id) };

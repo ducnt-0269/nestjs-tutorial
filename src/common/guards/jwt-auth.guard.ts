@@ -1,5 +1,6 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { invalidToken } from '../errors/api-error.js';
 
 export const TOKEN_SCHEME = 'Token';
 
@@ -10,6 +11,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     // A failure inside the strategy is a server fault, not a rejected token.
     if (error) throw error;
     if (user) return user;
-    throw new UnauthorizedException({ errors: { token: ['is invalid'] } });
+    throw invalidToken();
   }
 }

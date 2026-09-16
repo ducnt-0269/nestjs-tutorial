@@ -15,6 +15,7 @@ import {
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+import { fieldBody, invalidTokenBody } from '../../common/errors/api-error.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { NoStore } from '../../common/decorators/no-store.decorator.js';
 import {
@@ -41,7 +42,7 @@ export class UserController {
   @ApiSecurity(TOKEN_SCHEME)
   @ApiOkResponse({ schema: { example: userResponseExample } })
   @ApiUnauthorizedResponse({
-    schema: { example: { errors: { token: ['is invalid'] } } },
+    schema: { example: invalidTokenBody },
   })
   @NoStore()
   @SerializeOptions({ schema: userResponseSchema })
@@ -58,13 +59,13 @@ export class UserController {
   @ApiSecurity(TOKEN_SCHEME)
   @ApiOkResponse({ schema: { example: userResponseExample } })
   @ApiUnauthorizedResponse({
-    schema: { example: { errors: { token: ['is invalid'] } } },
+    schema: { example: invalidTokenBody },
   })
   @ApiConflictResponse({
-    schema: { example: { errors: { email: ['has already been taken'] } } },
+    schema: { example: fieldBody('email', 'has already been taken') },
   })
   @ApiUnprocessableEntityResponse({
-    schema: { example: { errors: { email: ['is invalid'] } } },
+    schema: { example: fieldBody('email', 'is invalid') },
   })
   @NoStore()
   @SerializeOptions({ schema: userResponseSchema })

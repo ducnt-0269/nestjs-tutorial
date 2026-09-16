@@ -1,5 +1,6 @@
 import { UnprocessableEntityException } from '@nestjs/common';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
+import { errorsBody } from '../errors/api-error.js';
 
 /**
  * Groups schema issues by the last segment of their path, so a body of
@@ -13,7 +14,7 @@ export function validationExceptionFactory(
   for (const issue of issues) {
     (errors[fieldOf(issue)] ??= []).push(issue.message);
   }
-  return new UnprocessableEntityException({ errors });
+  return new UnprocessableEntityException(errorsBody(errors));
 }
 
 // The spec allows a path segment to be either a property key or `{ key }`.

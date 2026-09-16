@@ -5,6 +5,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { notFoundBody } from '../../common/errors/api-error.js';
 import type { SafeUser } from '../users/users.service.js';
 import {
   profileResponseExample,
@@ -23,7 +24,7 @@ export class ProfilesController {
   @ApiOperation({ summary: 'Read a public profile' })
   @ApiOkResponse({ schema: { example: profileResponseExample } })
   @ApiNotFoundResponse({
-    schema: { example: { errors: { profile: ['not found'] } } },
+    schema: { example: notFoundBody('profile') },
   })
   @SerializeOptions({ schema: profileResponseSchema })
   show(@Param('username') username: string): Promise<SafeUser> {
