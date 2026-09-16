@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  SerializeOptions,
-  UnauthorizedException,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, SerializeOptions, UseGuards } from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiOperation,
@@ -38,12 +32,7 @@ export class UserController {
   @NoStore()
   @SerializeOptions({ schema: userResponseSchema })
   async current(@CurrentUser() caller: Express.User): Promise<UserWithToken> {
-    const user = await this.users.findById(caller.id);
-
-    // No endpoint deletes an account, so only a row removed by hand gets here.
-    if (!user) {
-      throw new UnauthorizedException({ errors: { token: ['is invalid'] } });
-    }
+    const user = await this.users.currentUser(caller.id);
 
     // The presented token, not a new one: one sign-in, one token to revoke.
     return { ...user, token: caller.token };
