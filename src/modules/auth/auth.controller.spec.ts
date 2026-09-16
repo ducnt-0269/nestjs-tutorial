@@ -93,7 +93,8 @@ describe('POST /api/users', () => {
     const response = await request(app.getHttpServer())
       .post('/api/users')
       .send(validBody)
-      .expect(201);
+      .expect(201)
+      .expect('Cache-Control', 'no-store');
 
     expect(response.body).toEqual({
       user: {

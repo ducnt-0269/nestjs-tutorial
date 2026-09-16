@@ -5,13 +5,13 @@ import { I18nService } from 'nestjs-i18n';
 @ApiTags('hello')
 @Controller('hello')
 export class HelloController {
-  constructor(private readonly i18n: I18nService) {}
+  constructor(private readonly i18nService: I18nService) {}
 
   @Get()
   @ApiOperation({ summary: 'Return a greeting in the requested language' })
   @ApiOkResponse({ schema: { example: { message: 'Hello, world!' } } })
   greet(): { message: string } {
     // Language comes from the Accept-Language header, resolved by nestjs-i18n.
-    return { message: this.i18n.t('hello.greeting') };
+    return { message: this.i18nService.t('hello.greeting') };
   }
 }
