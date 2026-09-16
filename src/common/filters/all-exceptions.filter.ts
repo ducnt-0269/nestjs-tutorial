@@ -14,8 +14,7 @@ import {
   requestErrorBody,
 } from '../errors/api-error.js';
 import { Prisma } from '../../generated/prisma/client.js';
-
-const UNIQUE_VIOLATION = 'P2002';
+import { isUniqueViolation } from '../../prisma/prisma-errors.js';
 
 interface UniqueViolationMeta {
   driverAdapterError?: {
@@ -83,15 +82,6 @@ function isErrorsBody(value: unknown): value is ErrorsBody {
   const errors = (value as { errors?: unknown }).errors;
   return (
     typeof errors === 'object' && errors !== null && !Array.isArray(errors)
-  );
-}
-
-function isUniqueViolation(
-  exception: unknown,
-): exception is Prisma.PrismaClientKnownRequestError {
-  return (
-    exception instanceof Prisma.PrismaClientKnownRequestError &&
-    exception.code === UNIQUE_VIOLATION
   );
 }
 
