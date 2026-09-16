@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module.js';
 import { CommonModule } from './common/common.module.js';
 import { HelloController } from './hello/hello.controller.js';
 import { validate } from './config/env.validation.js';
+import { ProfilesModule } from './modules/profiles/profiles.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
@@ -33,6 +34,7 @@ import { RedisModule } from './redis/redis.module.js';
     PrismaModule,
     RedisModule,
     AuthModule,
+    ProfilesModule,
   ],
   controllers: [HelloController],
 })
