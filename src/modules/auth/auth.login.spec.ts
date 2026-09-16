@@ -33,7 +33,7 @@ const storedUser = {
   updatedAt: new Date(),
 };
 
-const invalid = { errors: { credentials: ['invalid'] } };
+const invalid = { errors: { credentials: ['are invalid'] } };
 
 describe('POST /api/users/login', () => {
   let app: INestApplication;

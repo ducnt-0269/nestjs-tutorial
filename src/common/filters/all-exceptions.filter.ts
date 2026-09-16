@@ -7,18 +7,15 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import {
+  type ErrorsBody,
+  fieldBody,
+  internalErrorBody,
+  requestErrorBody,
+} from '../errors/api-error.js';
 import { Prisma } from '../../generated/prisma/client.js';
 
 const UNIQUE_VIOLATION = 'P2002';
-
-/**
- * The one error shape the API returns, whatever the status
- * (docs/system-architecture.md §4). The key names what the error is about:
- * a field, `credentials`, `token`, a resource name.
- */
-interface ErrorsBody {
-  errors: Record<string, string[]>;
-}
 
 interface UniqueViolationMeta {
   driverAdapterError?: {
@@ -55,13 +52,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const status = exception.getStatus();
       const payload = exception.getResponse();
       if (isErrorsBody(payload)) return { status, body: payload };
-      return { status, body: envelope('request', exception.message) };
+      return { status, body: requestErrorBody(exception.message) };
     }
 
     if (isUniqueViolation(exception)) {
       return {
         status: HttpStatus.CONFLICT,
-        body: envelope(violatedField(exception), 'has already been taken'),
+        body: fieldBody(violatedField(exception), 'has already been taken'),
       };
     }
 
@@ -70,19 +67,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // HttpExceptions.
     const status = httpStatusOf(exception);
     if (status !== undefined) {
-      return { status, body: envelope('request', messageOf(exception)) };
+      return { status, body: requestErrorBody(messageOf(exception)) };
     }
 
     this.logger.error(exception, AllExceptionsFilter.name);
     return {
       status: HttpStatus.INTERNAL_SERVER_ERROR,
-      body: envelope('server', 'internal error'),
+      body: internalErrorBody,
     };
   }
-}
-
-function envelope(key: string, message: string): ErrorsBody {
-  return { errors: { [key]: [message] } };
 }
 
 function isErrorsBody(value: unknown): value is ErrorsBody {
@@ -123,14 +116,17 @@ function violatedField(
   return index.slice(prefix.length).replace(/_key$/, '') || 'body';
 }
 
+// body-parser uses expose to mark messages safe for clients; status alone is insufficient.
 function httpStatusOf(exception: unknown): number | undefined {
   if (typeof exception !== 'object' || exception === null) return undefined;
-  const { status, statusCode } = exception as {
+  const { status, statusCode, expose } = exception as {
     status?: unknown;
     statusCode?: unknown;
+    expose?: unknown;
   };
+  if (expose !== true) return undefined;
   const candidate = status ?? statusCode;
-  return typeof candidate === 'number' && candidate >= 400 && candidate < 600
+  return typeof candidate === 'number' && candidate >= 400 && candidate < 500
     ? candidate
     : undefined;
 }

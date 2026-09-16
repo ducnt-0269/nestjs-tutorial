@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { notFound } from '../../common/errors/api-error.js';
 import type { SafeUser } from '../users/users.service.js';
 import { UsersService } from '../users/users.service.js';
 
@@ -13,7 +14,7 @@ export class ProfilesService {
     const user = await this.usersService.findByUsername(username);
 
     if (!user) {
-      throw new NotFoundException({ errors: { profile: ['not found'] } });
+      throw notFound('profile');
     }
 
     return user;

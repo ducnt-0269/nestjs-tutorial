@@ -87,6 +87,30 @@ quy tắc chung tại API boundary.
 | Error format | Format thống nhất `{ "errors": { "<key>": ["..."] } }`; key chỉ field hoặc đối tượng gây lỗi |
 | Internal error | Client nhận thông báo chung; chi tiết được ghi vào log |
 
+### Từ vựng của error body
+
+Key trả lời câu hỏi "lỗi thuộc về cái gì", và chỉ lấy từ bốn nhóm:
+
+| Nhóm | Key | Dùng khi |
+|---|---|---|
+| Field | tên field trong request body: `email`, `username`, `title` | Validation 422, và unique violation 409 |
+| Resource | tên resource số ít: `user`, `profile`, `article` | Lỗi nghiệp vụ trên một resource: 404, 403 |
+| Credential | `token`, `credentials` | 401 |
+| Request | `request`, `server` | Lỗi không thuộc dữ liệu nào: request hỏng, lỗi nội bộ |
+
+Message là vế sau của câu `<key> <message>`, viết thường, không dấu chấm cuối:
+`{ "email": ["is invalid"] }` đọc thành "email is invalid". Danh mục đang dùng:
+`can't be blank`, `is invalid`, `are invalid`, `has already been taken`,
+`must be at least N characters long`, `must be at most N bytes long`, `not found`,
+`internal error`.
+
+Thêm message mới thì bám bốn nhóm key trên. Thêm một nhóm key mới là quyết định kiến trúc, không
+phải chi tiết implementation — cập nhật bảng này cùng lúc.
+
+Envelope được dựng ở một chỗ duy nhất trong `common/errors`; service và controller dùng lại chứ không
+tự viết. Nhóm Field mở theo request body, ba nhóm còn lại là tập đóng, nên thêm một resource là một
+sửa đổi nhìn thấy được khi review.
+
 Contract cụ thể của endpoint, status code và tham số nằm trong API docs.
 
 ## 5. Design decisions
