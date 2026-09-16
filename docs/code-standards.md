@@ -46,17 +46,24 @@ Không sửa generated Prisma Client trong `src/generated/prisma`. Thay đổi s
 
 | Thành phần | Convention | Ví dụ |
 |---|---|---|
-| Class | PascalCase, suffix nói vai trò | `UsersService`, `JwtAuthGuard` |
+| Class | PascalCase; class giữ vai trò NestJS dùng suffix tương ứng | `UsersService`, `JwtAuthGuard` |
 | Type, interface | PascalCase, không tiền tố `I` | `SafeUser`, `ErrorsBody` |
-| Biến, property, method | camelCase | `currentUser`, `tokenFor` |
-| Hằng khai ở module-level | SCREAMING_SNAKE_CASE | `SALT_ROUNDS`, `TOKEN_SCHEME` |
+| Biến, parameter, property, hàm, method | camelCase | `currentUser`, `tokenFor` |
+| Giá trị cố định có tên, injection token ở module-level | CONSTANT_CASE | `SALT_ROUNDS`, `REDIS_CLIENT` |
+| Decorator | PascalCase | `CurrentUser`, `NoStore` |
 | Property nhận qua DI | camelCase của class được inject | `usersService`, `prismaService` |
-| Hàm trả boolean | tiền tố `is` hoặc `has` | `isErrorsBody`, `isUniqueViolation` |
+
+Tên boolean đọc như một điều kiện, chẳng hạn `isRevoked`, `isUniqueViolation`, `exists`;
+không giới hạn vào một danh sách tiền tố cố định.
+
+`const` chỉ ngăn gán lại binding, không quyết định cách đặt tên. CONSTANT_CASE dành cho giá trị
+được chủ ý công bố như hằng số. Schema, function và object phục vụ implementation dùng camelCase,
+kể cả khi khai ở module-level.
 
 Service của chính module đặt tên theo generator của NestJS: `nest g resource` sinh ra
-`usersService: UsersService`. Dự án mở rộng công thức đó cho mọi provider class được inject.
-Client thô lấy qua injection token là ngoại lệ, vì nó không phải provider class: trong service
-bọc nó, tên nói tầng thay vì nói class, như `client: Redis` trong `RedisService`.
+`usersService: UsersService`. Dự án mở rộng công thức đó cho mọi provider class được inject; khi
+có nhiều instance cùng type, thêm vai trò để phân biệt. Dependency lấy qua injection token đặt
+tên theo mục đích sử dụng, như `client: Redis` trong `RedisService`.
 
 Method ném `HttpException` mang tên hẹp đúng bằng ngữ cảnh của exception. `currentUser` ném
 401 là hợp lý vì tên đã khoá vào người đang đăng nhập; đặt tên rộng như `findOrFail` thì
@@ -135,7 +142,8 @@ Scope theo milestone issue; giữ diff tập trung, ưu tiên mỗi pull request
 ### Merge requirements
 
 - Sunlint không có error, đính kèm kết quả.
-- Lint và test pass.
+- Toàn bộ check cấu hình trong [CI](../.github/workflows/ci.yml) phải pass, hiện gồm typecheck,
+  build, test, oxlint, Prettier và Sunlint.
 - Đã self-review toàn bộ diff.
 - Có ít nhất một approval.
 
