@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {
   blank,
   emailSchema,
-  passwordSchema,
+  newPasswordSchema,
   usernameSchema,
 } from '../users/users.schema.js';
 
@@ -11,7 +11,7 @@ export const registerSchema = z.object({
     {
       username: usernameSchema,
       email: emailSchema,
-      password: passwordSchema,
+      password: newPasswordSchema,
     },
     { error: blank },
   ),

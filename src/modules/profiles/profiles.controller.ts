@@ -27,6 +27,6 @@ export class ProfilesController {
   })
   @SerializeOptions({ schema: profileResponseSchema })
   show(@Param('username') username: string): Promise<SafeUser> {
-    return this.profilesService.byUsername(username);
+    return this.profilesService.profileFor(username);
   }
 }

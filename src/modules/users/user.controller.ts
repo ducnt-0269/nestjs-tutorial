@@ -74,7 +74,7 @@ export class UserController {
   ): Promise<UserWithToken> {
     const user = await this.usersService.updateCurrentUser(
       caller.id,
-      body.user ?? {},
+      body.user,
     );
 
     // Changing the password leaves the presented token alive; it carries no
