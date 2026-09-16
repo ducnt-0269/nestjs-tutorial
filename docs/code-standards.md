@@ -22,7 +22,9 @@ Script cụ thể được định nghĩa trong `package.json`.
 | `npm test` | Chạy test suite bằng Vitest |
 | `npm run build` | Kiểm tra application build |
 
-## 2. File naming và module organization
+## 2. Naming và module organization
+
+### File
 
 - File dùng **kebab-case**: `articles.service.ts`, `jwt-auth.guard.ts`.
 - Dùng suffix theo trách nhiệm: `.controller.ts`, `.service.ts`, `.module.ts`, `.guard.ts`,
@@ -39,6 +41,33 @@ file `.ts`. Dùng `import.meta.dirname` khi cần đường dẫn thư mục c�
 
 Không sửa generated Prisma Client trong `src/generated/prisma`. Thay đổi schema rồi chạy
 `npm run db:generate`.
+
+### Identifier
+
+| Thành phần | Convention | Ví dụ |
+|---|---|---|
+| Class | PascalCase; class giữ vai trò NestJS dùng suffix tương ứng | `UsersService`, `JwtAuthGuard` |
+| Type, interface | PascalCase, không tiền tố `I` | `SafeUser`, `ErrorsBody` |
+| Biến, parameter, property, hàm, method | camelCase | `currentUser`, `tokenFor` |
+| Giá trị cố định có tên, injection token ở module-level | CONSTANT_CASE | `SALT_ROUNDS`, `REDIS_CLIENT` |
+| Decorator | PascalCase | `CurrentUser`, `NoStore` |
+| Property nhận qua DI | camelCase của class được inject | `usersService`, `prismaService` |
+
+Tên boolean đọc như một điều kiện, chẳng hạn `isRevoked`, `isUniqueViolation`, `exists`;
+không giới hạn vào một danh sách tiền tố cố định.
+
+`const` chỉ ngăn gán lại binding, không quyết định cách đặt tên. CONSTANT_CASE dành cho giá trị
+được chủ ý công bố như hằng số. Schema, function và object phục vụ implementation dùng camelCase,
+kể cả khi khai ở module-level.
+
+Service của chính module đặt tên theo generator của NestJS: `nest g resource` sinh ra
+`usersService: UsersService`. Dự án mở rộng công thức đó cho mọi provider class được inject; khi
+có nhiều instance cùng type, thêm vai trò để phân biệt. Dependency lấy qua injection token đặt
+tên theo mục đích sử dụng, như `client: Redis` trong `RedisService`.
+
+Method ném `HttpException` mang tên hẹp đúng bằng ngữ cảnh của exception. `currentUser` ném
+401 là hợp lý vì tên đã khoá vào người đang đăng nhập; đặt tên rộng như `findOrFail` thì
+caller sau sẽ nhận 401 ở chỗ đáng lẽ phải là 404.
 
 ## 3. Database conventions
 
@@ -113,7 +142,8 @@ Scope theo milestone issue; giữ diff tập trung, ưu tiên mỗi pull request
 ### Merge requirements
 
 - Sunlint không có error, đính kèm kết quả.
-- Lint và test pass.
+- Toàn bộ check cấu hình trong [CI](../.github/workflows/ci.yml) phải pass, hiện gồm typecheck,
+  build, test, oxlint, Prettier và Sunlint.
 - Đã self-review toàn bộ diff.
 - Có ít nhất một approval.
 

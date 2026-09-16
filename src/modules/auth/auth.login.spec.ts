@@ -18,6 +18,7 @@ import { CommonModule } from '../../common/common.module.js';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AuthModule } from './auth.module.js';
+import { TokenRevocationService } from './token-revocation.service.js';
 
 const secret = 'test-secret-'.padEnd(32, 'x');
 const password = 'secret123';
@@ -54,6 +55,9 @@ describe('POST /api/users/login', () => {
     })
       .overrideProvider(PrismaService)
       .useValue({ user: { findUnique } })
+      // Redis stays out of these suites; nothing here exercises revocation.
+      .overrideProvider(TokenRevocationService)
+      .useValue({ isRevoked: () => Promise.resolve(false) })
       .compile();
 
     app = moduleRef.createNestApplication();
@@ -95,6 +99,18 @@ describe('POST /api/users/login', () => {
     expect(jwt.verify<{ sub: string }>(response.body.user.token).sub).toBe(
       '42',
     );
+  });
+
+  it('mints a different token for each sign-in of the same account', async () => {
+    findUnique.mockResolvedValue(storedUser);
+    const credentials = { user: { email: 'jake@example.com', password } };
+
+    const first = await signIn(credentials).expect(200);
+    const second = await signIn(credentials).expect(200);
+
+    // Both sign-ins land in the same second, so only something unique to each
+    // token keeps revoking one of them from ending the other.
+    expect(first.body.user.token).not.toBe(second.body.user.token);
   });
 
   it('looks the account up by lower-cased email and opts into the hash', async () => {

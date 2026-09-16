@@ -70,8 +70,11 @@ như giải thích ở §5.
 Một request đi qua authentication và authorization phù hợp, validation, business logic,
 data access và serialization trước khi trả về client. Lỗi ở các bước được chuyển về cùng một format.
 
-Controller tiếp nhận request và chuyển cho service xử lý. Service giữ business logic; Prisma
-cung cấp data access. Validation và serialization là quy tắc chung tại API boundary.
+Controller xử lý giao tiếp HTTP: nhận input, chuyển cho service xử lý và lắp response. Mặc định
+thân handler không có nhánh rẽ và không truy cập dữ liệu; nhánh rẽ chỉ thuộc về controller khi nó
+quyết định hình dạng response, không quyết định nghiệp vụ. Service giữ business logic và quyết
+định status code cho lỗi nghiệp vụ; Prisma cung cấp data access. Validation và serialization là
+quy tắc chung tại API boundary.
 
 | Nguyên tắc | Thiết kế |
 |---|---|

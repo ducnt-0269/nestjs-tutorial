@@ -6,6 +6,18 @@ import { REDIS_CLIENT } from './redis.constants.js';
 export class RedisService implements OnModuleDestroy {
   constructor(@Inject(REDIS_CLIENT) private readonly client: Redis) {}
 
+  async setWithExpiry(
+    key: string,
+    value: string,
+    seconds: number,
+  ): Promise<void> {
+    await this.client.set(key, value, 'EX', seconds);
+  }
+
+  async exists(key: string): Promise<boolean> {
+    return (await this.client.exists(key)) === 1;
+  }
+
   async onModuleDestroy(): Promise<void> {
     // With enableOfflineQueue disabled, quit() rejects whenever the socket is
     // not writable — which is exactly the case when Redis is already gone.
