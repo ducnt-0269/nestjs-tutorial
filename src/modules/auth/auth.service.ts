@@ -1,19 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { compare, hash, hashSync } from 'bcrypt';
 import { type UserWithToken, UsersService } from '../users/users.service.js';
 import type { LoginInput, RegisterInput } from './auth.schema.js';
 
-// bcrypt's default; about 65 ms per hash on current hardware.
-const SALT_ROUNDS = 10;
-
-// Compared against when no account matches the email, so that a wrong email
-// and a wrong password take the same time to answer.
-const NO_ACCOUNT_HASH = hashSync('no account matches this hash', SALT_ROUNDS);
-
 const INVALID_CREDENTIALS = { errors: { credentials: ['invalid'] } };
 
+// Issues and refuses tokens. Storing and checking a password belongs to the
+// module that owns the column, so no hash ever reaches this file.
 @Injectable()
 export class AuthService {
   constructor(
@@ -22,26 +16,20 @@ export class AuthService {
   ) {}
 
   async register(input: RegisterInput): Promise<UserWithToken> {
-    const password = await hash(input.password, SALT_ROUNDS);
-    const user = await this.usersService.create({ ...input, password });
+    const user = await this.usersService.create(input);
     return { ...user, token: this.tokenFor(user.id) };
   }
 
   async login(input: LoginInput): Promise<UserWithToken> {
-    const account = await this.usersService.findByEmailWithPassword(
+    const user = await this.usersService.findByCredentials(
       input.email,
-    );
-    const matches = await compare(
       input.password,
-      account?.password ?? NO_ACCOUNT_HASH,
     );
 
-    if (!account || !matches) {
+    if (!user) {
       throw new UnauthorizedException(INVALID_CREDENTIALS);
     }
 
-    // The hash stops here rather than travelling on to the serializer.
-    const { password: _password, ...user } = account;
     return { ...user, token: this.tokenFor(user.id) };
   }
 
