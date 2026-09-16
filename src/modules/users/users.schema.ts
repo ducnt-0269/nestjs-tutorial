@@ -26,6 +26,23 @@ export const passwordSchema = z
     'must be at most 72 bytes long',
   );
 
+// Every field optional: one absent from the body keeps its current value, and
+// Prisma reads the resulting `undefined` as "leave this column alone". An
+// explicit null clears bio or image, which is the only way to empty them.
+const updateFields = z.object({
+  username: usernameSchema.optional(),
+  email: emailSchema.optional(),
+  password: passwordSchema.optional(),
+  bio: z.string().nullable().optional(),
+  image: z.string().nullable().optional(),
+});
+
+// The wrapper is optional too, so a body of {} is a valid no-op rather than a 422.
+export const updateUserSchema = z.object({ user: updateFields.optional() });
+
+export type UpdateUserBody = z.infer<typeof updateUserSchema>;
+export type UpdateUserInput = NonNullable<UpdateUserBody['user']>;
+
 // Allowlist: fields absent here never leave the API (§5).
 export const userResponseSchema = z
   .object({

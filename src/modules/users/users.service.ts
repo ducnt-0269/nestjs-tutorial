@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import type { User } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { hashPassword, passwordMatches } from './password.js';
+import type { UpdateUserInput } from './users.schema.js';
 
 type NewUser = Pick<User, 'email' | 'username' | 'password'>;
 export type SafeUser = Omit<User, 'password'>;
@@ -20,6 +21,22 @@ export class UsersService {
     });
   }
 
+  // The spread order is load-bearing: the hashed value has to land after the
+  // raw input, or the plaintext password would overwrite it.
+  async updateCurrentUser(
+    id: number,
+    input: UpdateUserInput,
+  ): Promise<SafeUser> {
+    const password = input.password
+      ? await hashPassword(input.password)
+      : undefined;
+
+    return this.prismaService.user.update({
+      where: { id },
+      data: { ...input, password },
+    });
+  }
+
   // Named for the signed-in caller so that answering with a 401 stays right: a
   // user missing in any other context is a 404, not a rejected token.
   async currentUser(id: number): Promise<SafeUser> {
@@ -31,6 +48,12 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  // Plain query: the caller decides whether nothing found is a 404, a 401 or
+  // an empty result.
+  findByUsername(username: string): Promise<SafeUser | null> {
+    return this.prismaService.user.findUnique({ where: { username } });
   }
 
   // The one query that opts back into the hash (§5). It compares here as well,
