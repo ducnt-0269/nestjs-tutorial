@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { blank } from '../../common/errors/messages.js';
 import {
-  blank,
   emailSchema,
   newPasswordSchema,
   usernameSchema,

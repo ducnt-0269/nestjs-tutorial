@@ -16,6 +16,7 @@ import {
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import { fieldBody, invalidTokenBody } from '../../common/errors/api-error.js';
+import { invalid, taken } from '../../common/errors/messages.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { NoStore } from '../../common/decorators/no-store.decorator.js';
 import {
@@ -62,10 +63,10 @@ export class UserController {
     schema: { example: invalidTokenBody },
   })
   @ApiConflictResponse({
-    schema: { example: fieldBody('email', 'has already been taken') },
+    schema: { example: fieldBody('email', taken) },
   })
   @ApiUnprocessableEntityResponse({
-    schema: { example: fieldBody('email', 'is invalid') },
+    schema: { example: fieldBody('email', invalid) },
   })
   @NoStore()
   @SerializeOptions({ schema: userResponseSchema })

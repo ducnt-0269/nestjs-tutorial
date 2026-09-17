@@ -13,6 +13,7 @@ import {
   internalErrorBody,
   requestErrorBody,
 } from '../errors/api-error.js';
+import { taken } from '../errors/messages.js';
 import { Prisma } from '../../generated/prisma/client.js';
 import { isUniqueViolation } from '../../prisma/prisma-errors.js';
 
@@ -57,7 +58,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (isUniqueViolation(exception)) {
       return {
         status: HttpStatus.CONFLICT,
-        body: fieldBody(violatedField(exception), 'has already been taken'),
+        body: fieldBody(violatedField(exception), taken),
       };
     }
 

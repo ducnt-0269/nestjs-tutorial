@@ -1,7 +1,5 @@
 import { z } from 'zod';
-
-// Wording for a value that is missing; §4's error format uses it across modules.
-export const blank = "can't be blank";
+import { blank, invalid } from '../../common/errors/messages.js';
 
 // The rules below describe an account rather than the act of registering, so they
 // live with the module that owns the account; auth and the update endpoint reuse them.
@@ -11,7 +9,7 @@ export const blank = "can't be blank";
 // share the rule so the two can never disagree.
 export const emailSchema = z
   .email({
-    error: (issue) => (issue.input === undefined ? blank : 'is invalid'),
+    error: (issue) => (issue.input === undefined ? blank : invalid),
   })
   .toLowerCase();
 

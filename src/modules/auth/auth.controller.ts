@@ -22,6 +22,7 @@ import {
   invalidCredentialsBody,
   invalidTokenBody,
 } from '../../common/errors/api-error.js';
+import { blank, taken } from '../../common/errors/messages.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { NoStore } from '../../common/decorators/no-store.decorator.js';
 import {
@@ -56,10 +57,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Register a new account' })
   @ApiCreatedResponse({ schema: { example: userResponseExample } })
   @ApiUnprocessableEntityResponse({
-    schema: { example: fieldBody('email', "can't be blank") },
+    schema: { example: fieldBody('email', blank) },
   })
   @ApiConflictResponse({
-    schema: { example: fieldBody('email', 'has already been taken') },
+    schema: { example: fieldBody('email', taken) },
   })
   @NoStore()
   @SerializeOptions({ schema: userResponseSchema })
@@ -78,7 +79,7 @@ export class AuthController {
     schema: { example: invalidCredentialsBody },
   })
   @ApiUnprocessableEntityResponse({
-    schema: { example: fieldBody('email', "can't be blank") },
+    schema: { example: fieldBody('email', blank) },
   })
   @NoStore()
   @SerializeOptions({ schema: userResponseSchema })

@@ -26,6 +26,7 @@ import {
   invalidTokenBody,
   notFoundBody,
 } from '../../common/errors/api-error.js';
+import { blank } from '../../common/errors/messages.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import {
   JwtAuthGuard,
@@ -43,7 +44,7 @@ import { type ArticleWithAuthor, ArticlesService } from './articles.service.js';
 
 const notFound = notFoundBody('article');
 const forbidden = forbiddenBody('article');
-const blankTitle = fieldBody('title', "can't be blank");
+const blankTitle = fieldBody('title', blank);
 
 // An article is public data, so reading one carries no guard and no no-store:
 // the response holds nothing that belongs to the reader.

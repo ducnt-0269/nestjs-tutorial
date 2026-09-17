@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { blank } from '../../common/errors/messages.js';
 import { profileFields } from '../profiles/profiles.schema.js';
-import { blank } from '../users/users.schema.js';
 
 // One rule for all three content fields: present, and not whitespace alone.
 // Same shape as the username rule, so an empty string is rejected rather than
