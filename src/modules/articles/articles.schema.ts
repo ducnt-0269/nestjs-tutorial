@@ -3,7 +3,9 @@ import {
   BLANK_MESSAGE,
   INVALID_MESSAGE,
 } from '../../common/errors/messages.js';
+import { INT4_MAX } from '../../prisma/prisma.constants.js';
 import { publicProfileSchema } from '../users/users.schema.js';
+import { DEFAULT_LIMIT, MAX_LIMIT } from './articles.constants.js';
 
 // One rule for all three content fields: present, and not whitespace alone.
 // Same shape as the username rule, so an empty string is rejected rather than
@@ -33,14 +35,6 @@ export const updateArticleSchema = z.object({
   article: articleFields.partial().default({}),
 });
 
-// `skip` and `take` reach the driver as 32-bit values and wrap in silence: an
-// offset of 2^32 starts where 0 does, and nothing is raised to say so.
-const MAX_OFFSET = 2_147_483_647;
-
-// A decision rather than a measurement: twenty is the page handed out unasked,
-// and past a hundred a caller is asking for the table rather than a page of it.
-const MAX_LIMIT = 100;
-
 const pageField = (fallback: number, ceiling: number) =>
   z.coerce
     .number({ error: INVALID_MESSAGE })
@@ -56,8 +50,8 @@ export const listArticlesQuerySchema = z.object({
     .string({ error: INVALID_MESSAGE })
     .describe('Filter on username')
     .optional(),
-  limit: pageField(20, MAX_LIMIT),
-  offset: pageField(0, MAX_OFFSET),
+  limit: pageField(DEFAULT_LIMIT, MAX_LIMIT),
+  offset: pageField(0, INT4_MAX),
 });
 
 export type CreateArticleBody = z.infer<typeof createArticleSchema>;

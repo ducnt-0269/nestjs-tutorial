@@ -5,14 +5,13 @@ import { forbidden, notFound } from '../../common/errors/api-error.js';
 // the type means something else entirely.
 import type { Comment } from '../../generated/prisma/client.js';
 import { isForeignKeyViolation } from '../../prisma/prisma-errors.js';
+import { INT4_MAX } from '../../prisma/prisma.constants.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { ArticlesService } from '../articles/articles.service.js';
 import type { SafeUser } from '../users/users.service.js';
 import type { CreateCommentInput } from './comments.schema.js';
 
 export type CommentWithAuthor = Comment & { author: SafeUser };
-
-const INT4_MAX = 2_147_483_647;
 
 @Injectable()
 export class CommentsService {
