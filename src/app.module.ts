@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AcceptLanguageResolver, I18nModule, QueryResolver } from 'nestjs-i18n';
 import { ArticlesModule } from './modules/articles/articles.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { CommentsModule } from './modules/comments/comments.module.js';
 import { CommonModule } from './common/common.module.js';
 import { HelloController } from './hello/hello.controller.js';
 import { validate } from './config/env.validation.js';
@@ -37,6 +38,7 @@ import { RedisModule } from './redis/redis.module.js';
     AuthModule,
     ProfilesModule,
     ArticlesModule,
+    CommentsModule,
   ],
   controllers: [HelloController],
 })

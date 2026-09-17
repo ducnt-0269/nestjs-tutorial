@@ -7,5 +7,8 @@ import { ArticlesService } from './articles.service.js';
   imports: [PrismaModule],
   controllers: [ArticlesController],
   providers: [ArticlesService],
+  // Comments answer a missing article with the article's own 404, so they read
+  // it through this service rather than querying the table a second time.
+  exports: [ArticlesService],
 })
 export class ArticlesModule {}

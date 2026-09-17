@@ -24,6 +24,7 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   articles Article[]
+  comments Comment[]
 
   @@map("users")
 }
@@ -39,6 +40,22 @@ model Article {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
+  comments Comment[]
+
   @@index([createdAt])
   @@map("articles")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  body      String
+  articleId Int      @map("article_id")
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  authorId  Int      @map("author_id")
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([articleId, createdAt])
+  @@map("comments")
 }
