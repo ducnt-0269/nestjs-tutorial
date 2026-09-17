@@ -4,6 +4,7 @@ import { Prisma } from '../generated/prisma/client.js';
 // knowledge of what they mean. What each one should answer stays with the
 // caller, which is the only place that knows what the request asked for.
 const UNIQUE_VIOLATION = 'P2002';
+const FOREIGN_KEY_VIOLATION = 'P2003';
 const ROW_NOT_FOUND = 'P2025';
 
 function hasCode(error: unknown, code: string): boolean {
@@ -17,6 +18,11 @@ export function isUniqueViolation(
   error: unknown,
 ): error is Prisma.PrismaClientKnownRequestError {
   return hasCode(error, UNIQUE_VIOLATION);
+}
+
+// A write pointed at a row in another table that is not there.
+export function isForeignKeyViolation(error: unknown): boolean {
+  return hasCode(error, FOREIGN_KEY_VIOLATION);
 }
 
 // An update or a delete found no row to act on.
