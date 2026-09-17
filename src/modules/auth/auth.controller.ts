@@ -4,7 +4,6 @@ import {
   HttpCode,
   Post,
   SerializeOptions,
-  UseGuards,
 } from '@nestjs/common';
 import {
   ApiConflictResponse,
@@ -12,7 +11,6 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiSecurity,
   ApiTags,
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
@@ -20,15 +18,11 @@ import {
 import {
   fieldBody,
   invalidCredentialsBody,
-  invalidTokenBody,
 } from '../../common/errors/api-error.js';
 import { blank, taken } from '../../common/errors/messages.js';
+import { Authenticated } from '../../common/decorators/authenticated.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { NoStore } from '../../common/decorators/no-store.decorator.js';
-import {
-  JwtAuthGuard,
-  TOKEN_SCHEME,
-} from '../../common/guards/jwt-auth.guard.js';
 import {
   userResponseExample,
   userResponseSchema,
@@ -92,13 +86,9 @@ export class AuthController {
   @Post('logout')
   // The presented token dies here, so there is nothing left to answer with.
   @HttpCode(204)
-  @UseGuards(JwtAuthGuard)
+  @Authenticated()
   @ApiOperation({ summary: 'Sign out and revoke the presented token' })
   @ApiNoContentResponse()
-  @ApiSecurity(TOKEN_SCHEME)
-  @ApiUnauthorizedResponse({
-    schema: { example: invalidTokenBody },
-  })
   logout(@CurrentUser() caller: Express.User): Promise<void> {
     return this.tokenRevocationService.revoke(caller.token);
   }

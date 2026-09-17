@@ -1,28 +1,16 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Put,
-  SerializeOptions,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Put, SerializeOptions } from '@nestjs/common';
 import {
   ApiConflictResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiSecurity,
   ApiTags,
-  ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { fieldBody, invalidTokenBody } from '../../common/errors/api-error.js';
+import { fieldBody } from '../../common/errors/api-error.js';
 import { invalid, taken } from '../../common/errors/messages.js';
+import { Authenticated } from '../../common/decorators/authenticated.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { NoStore } from '../../common/decorators/no-store.decorator.js';
-import {
-  JwtAuthGuard,
-  TOKEN_SCHEME,
-} from '../../common/guards/jwt-auth.guard.js';
 import {
   type UpdateUserBody,
   updateUserSchema,
@@ -38,13 +26,9 @@ export class UserController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @Authenticated()
   @ApiOperation({ summary: 'Read the signed-in account' })
-  @ApiSecurity(TOKEN_SCHEME)
   @ApiOkResponse({ schema: { example: userResponseExample } })
-  @ApiUnauthorizedResponse({
-    schema: { example: invalidTokenBody },
-  })
   @NoStore()
   @SerializeOptions({ schema: userResponseSchema })
   async current(@CurrentUser() caller: Express.User): Promise<UserWithToken> {
@@ -55,13 +39,9 @@ export class UserController {
   }
 
   @Put()
-  @UseGuards(JwtAuthGuard)
+  @Authenticated()
   @ApiOperation({ summary: 'Update the signed-in account' })
-  @ApiSecurity(TOKEN_SCHEME)
   @ApiOkResponse({ schema: { example: userResponseExample } })
-  @ApiUnauthorizedResponse({
-    schema: { example: invalidTokenBody },
-  })
   @ApiConflictResponse({
     schema: { example: fieldBody('email', taken) },
   })
