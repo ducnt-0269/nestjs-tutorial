@@ -1,10 +1,14 @@
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 
 export interface ErrorsBody {
   errors: Record<string, string[]>;
 }
 
-export type Resource = 'user' | 'profile';
+export type Resource = 'user' | 'profile' | 'article';
 
 export function errorsBody(errors: Record<string, string[]>): ErrorsBody {
   return { errors };
@@ -19,6 +23,8 @@ export const invalidCredentialsBody = errorsBody({
 });
 export const notFoundBody = (resource: Resource) =>
   errorsBody({ [resource]: ['not found'] });
+export const forbiddenBody = (resource: Resource) =>
+  errorsBody({ [resource]: ['forbidden'] });
 export const requestErrorBody = (message: string) =>
   errorsBody({ request: [message] });
 export const internalErrorBody = errorsBody({ server: ['internal error'] });
@@ -30,3 +36,6 @@ export const invalidCredentials = () =>
 
 export const notFound = (resource: Resource) =>
   new NotFoundException(notFoundBody(resource));
+
+export const forbidden = (resource: Resource) =>
+  new ForbiddenException(forbiddenBody(resource));

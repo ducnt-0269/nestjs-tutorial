@@ -23,5 +23,22 @@ model User {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
+  articles Article[]
+
   @@map("users")
+}
+
+model Article {
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique
+  title       String
+  description String
+  body        String
+  authorId    Int      @map("author_id")
+  author      User     @relation(fields: [authorId], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@map("articles")
 }
