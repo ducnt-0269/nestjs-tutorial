@@ -23,3 +23,34 @@ export function isUniqueViolation(
 export function isRowGone(error: unknown): boolean {
   return hasCode(error, ROW_NOT_FOUND);
 }
+
+interface UniqueViolationMeta {
+  driverAdapterError?: {
+    cause?: { table?: string; constraint?: { index?: string } };
+  };
+}
+
+/**
+ * Prisma 7 with a driver adapter no longer populates `meta.target`; the only
+ * thing adapter-pg passes on is the violated index name, even though the
+ * documentation still describes `target`. Open upstream since 2025-10:
+ * https://github.com/prisma/prisma/issues/28281 (#28953 is the P2002-specific
+ * duplicate). Index names follow `<table>_<column>_key` (docs/code-standards.md
+ * §3), so the column is what sits between. Once the issue is fixed this
+ * function collapses to `meta.target[0]`.
+ *
+ * One column only. A composite unique index is named for every column it
+ * spans, so this returns all of them joined, and the caller has to decide
+ * which one the request should be told about.
+ */
+export function violatedColumn(
+  exception: Prisma.PrismaClientKnownRequestError,
+): string | undefined {
+  const cause = (exception.meta as UniqueViolationMeta | undefined)
+    ?.driverAdapterError?.cause;
+  const table = cause?.table ?? '';
+  const index = cause?.constraint?.index ?? '';
+  const prefix = `${table}_`;
+  if (!table || !index.startsWith(prefix)) return undefined;
+  return index.slice(prefix.length).replace(/_key$/, '') || undefined;
+}
