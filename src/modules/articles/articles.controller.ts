@@ -7,7 +7,6 @@ import {
   Post,
   Put,
   SerializeOptions,
-  UseGuards,
 } from '@nestjs/common';
 import {
   ApiCreatedResponse,
@@ -15,22 +14,17 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiSecurity,
   ApiTags,
-  ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import {
   fieldBody,
   forbiddenBody,
-  invalidTokenBody,
   notFoundBody,
 } from '../../common/errors/api-error.js';
+import { BLANK_MESSAGE } from '../../common/errors/messages.js';
+import { Authenticated } from '../../common/decorators/authenticated.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
-import {
-  JwtAuthGuard,
-  TOKEN_SCHEME,
-} from '../../common/guards/jwt-auth.guard.js';
 import {
   type CreateArticleBody,
   articleResponseExample,
@@ -43,7 +37,7 @@ import { type ArticleWithAuthor, ArticlesService } from './articles.service.js';
 
 const notFound = notFoundBody('article');
 const forbidden = forbiddenBody('article');
-const blankTitle = fieldBody('title', "can't be blank");
+const blankTitle = fieldBody('title', BLANK_MESSAGE);
 
 // An article is public data, so reading one carries no guard and no no-store:
 // the response holds nothing that belongs to the reader.
@@ -53,11 +47,9 @@ export class ArticlesController {
   constructor(private readonly articlesService: ArticlesService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @Authenticated()
   @ApiOperation({ summary: 'Publish an article' })
-  @ApiSecurity(TOKEN_SCHEME)
   @ApiCreatedResponse({ schema: { example: articleResponseExample } })
-  @ApiUnauthorizedResponse({ schema: { example: invalidTokenBody } })
   @ApiUnprocessableEntityResponse({ schema: { example: blankTitle } })
   @SerializeOptions({ schema: articleResponseSchema })
   create(
@@ -77,11 +69,9 @@ export class ArticlesController {
   }
 
   @Put(':slug')
-  @UseGuards(JwtAuthGuard)
+  @Authenticated()
   @ApiOperation({ summary: 'Edit an article' })
-  @ApiSecurity(TOKEN_SCHEME)
   @ApiOkResponse({ schema: { example: articleResponseExample } })
-  @ApiUnauthorizedResponse({ schema: { example: invalidTokenBody } })
   @ApiForbiddenResponse({ schema: { example: forbidden } })
   @ApiNotFoundResponse({ schema: { example: notFound } })
   @ApiUnprocessableEntityResponse({ schema: { example: blankTitle } })
@@ -95,11 +85,9 @@ export class ArticlesController {
   }
 
   @Delete(':slug')
-  @UseGuards(JwtAuthGuard)
+  @Authenticated()
   @ApiOperation({ summary: 'Delete an article' })
-  @ApiSecurity(TOKEN_SCHEME)
   @ApiOkResponse({ schema: { example: {} } })
-  @ApiUnauthorizedResponse({ schema: { example: invalidTokenBody } })
   @ApiForbiddenResponse({ schema: { example: forbidden } })
   @ApiNotFoundResponse({ schema: { example: notFound } })
   remove(

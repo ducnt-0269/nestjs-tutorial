@@ -13,14 +13,11 @@ import {
   internalErrorBody,
   requestErrorBody,
 } from '../errors/api-error.js';
-import { Prisma } from '../../generated/prisma/client.js';
-import { isUniqueViolation } from '../../prisma/prisma-errors.js';
-
-interface UniqueViolationMeta {
-  driverAdapterError?: {
-    cause?: { table?: string; constraint?: { index?: string } };
-  };
-}
+import { TAKEN_MESSAGE } from '../errors/messages.js';
+import {
+  isUniqueViolation,
+  violatedColumn,
+} from '../../prisma/prisma-errors.js';
 
 /**
  * Every error leaves the API as `{ errors: { <key>: [messages] } }`, whatever
@@ -57,7 +54,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (isUniqueViolation(exception)) {
       return {
         status: HttpStatus.CONFLICT,
-        body: fieldBody(violatedField(exception), 'has already been taken'),
+        // The column is what Postgres reports; naming the whole body is the
+        // best the API can do when the index name does not yield one.
+        body: fieldBody(violatedColumn(exception) ?? 'body', TAKEN_MESSAGE),
       };
     }
 
@@ -83,27 +82,6 @@ function isErrorsBody(value: unknown): value is ErrorsBody {
   return (
     typeof errors === 'object' && errors !== null && !Array.isArray(errors)
   );
-}
-
-/**
- * Prisma 7 with a driver adapter no longer populates `meta.target`; the only
- * thing adapter-pg passes on is the violated index name, even though the
- * documentation still describes `target`. Open upstream since 2025-10:
- * https://github.com/prisma/prisma/issues/28281 (#28953 is the P2002-specific
- * duplicate). Index names follow `<table>_<column>_key` (docs/code-standards.md
- * §3), so the column is what sits between. Once the issue is fixed this
- * function collapses to `meta.target[0]`.
- */
-function violatedField(
-  exception: Prisma.PrismaClientKnownRequestError,
-): string {
-  const cause = (exception.meta as UniqueViolationMeta | undefined)
-    ?.driverAdapterError?.cause;
-  const table = cause?.table ?? '';
-  const index = cause?.constraint?.index ?? '';
-  const prefix = `${table}_`;
-  if (!table || !index.startsWith(prefix)) return 'body';
-  return index.slice(prefix.length).replace(/_key$/, '') || 'body';
 }
 
 // body-parser uses expose to mark messages safe for clients; status alone is insufficient.

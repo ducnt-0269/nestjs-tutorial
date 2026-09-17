@@ -1,11 +1,14 @@
 import { z } from 'zod';
-import { profileFields } from '../profiles/profiles.schema.js';
-import { blank } from '../users/users.schema.js';
+import { BLANK_MESSAGE } from '../../common/errors/messages.js';
+import { publicProfileSchema } from '../users/users.schema.js';
 
 // One rule for all three content fields: present, and not whitespace alone.
 // Same shape as the username rule, so an empty string is rejected rather than
 // quietly stored.
-const contentField = z.string({ error: blank }).trim().min(1, blank);
+const contentField = z
+  .string({ error: BLANK_MESSAGE })
+  .trim()
+  .min(1, BLANK_MESSAGE);
 
 const articleFields = z.object(
   {
@@ -15,7 +18,7 @@ const articleFields = z.object(
   },
   // Without this the root key answers with Zod's own wording, and the same
   // mistake on registration already answers with the project's.
-  { error: blank },
+  { error: BLANK_MESSAGE },
 );
 
 export const createArticleSchema = z.object({ article: articleFields });
@@ -44,8 +47,7 @@ export const articleResponseSchema = z
     // the response; declaring these as strings would make the serializer throw.
     createdAt: z.date().transform((at) => at.toISOString()),
     updatedAt: z.date().transform((at) => at.toISOString()),
-    // The public profile shape, owned by the profiles module and reused whole.
-    author: profileFields,
+    author: publicProfileSchema,
   })
   .transform((article) => ({ article }));
 
