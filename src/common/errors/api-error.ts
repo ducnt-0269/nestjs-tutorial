@@ -3,7 +3,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { invalid } from './messages.js';
+import { INVALID_MESSAGE } from './messages.js';
 
 export interface ErrorsBody {
   errors: Record<string, string[]>;
@@ -18,7 +18,7 @@ export function errorsBody(errors: Record<string, string[]>): ErrorsBody {
 export const fieldBody = (field: string, message: string): ErrorsBody =>
   errorsBody({ [field]: [message] });
 
-export const invalidTokenBody = errorsBody({ token: [invalid] });
+export const invalidTokenBody = errorsBody({ token: [INVALID_MESSAGE] });
 export const invalidCredentialsBody = errorsBody({
   credentials: ['are invalid'],
 });

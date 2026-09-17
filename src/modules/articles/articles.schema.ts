@@ -1,11 +1,14 @@
 import { z } from 'zod';
-import { blank } from '../../common/errors/messages.js';
+import { BLANK_MESSAGE } from '../../common/errors/messages.js';
 import { profileFields } from '../profiles/profiles.schema.js';
 
 // One rule for all three content fields: present, and not whitespace alone.
 // Same shape as the username rule, so an empty string is rejected rather than
 // quietly stored.
-const contentField = z.string({ error: blank }).trim().min(1, blank);
+const contentField = z
+  .string({ error: BLANK_MESSAGE })
+  .trim()
+  .min(1, BLANK_MESSAGE);
 
 const articleFields = z.object(
   {
@@ -15,7 +18,7 @@ const articleFields = z.object(
   },
   // Without this the root key answers with Zod's own wording, and the same
   // mistake on registration already answers with the project's.
-  { error: blank },
+  { error: BLANK_MESSAGE },
 );
 
 export const createArticleSchema = z.object({ article: articleFields });

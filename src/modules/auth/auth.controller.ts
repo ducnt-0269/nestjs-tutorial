@@ -19,7 +19,7 @@ import {
   fieldBody,
   invalidCredentialsBody,
 } from '../../common/errors/api-error.js';
-import { blank, taken } from '../../common/errors/messages.js';
+import { BLANK_MESSAGE, TAKEN_MESSAGE } from '../../common/errors/messages.js';
 import { Authenticated } from '../../common/decorators/authenticated.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { NoStore } from '../../common/decorators/no-store.decorator.js';
@@ -51,10 +51,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Register a new account' })
   @ApiCreatedResponse({ schema: { example: userResponseExample } })
   @ApiUnprocessableEntityResponse({
-    schema: { example: fieldBody('email', blank) },
+    schema: { example: fieldBody('email', BLANK_MESSAGE) },
   })
   @ApiConflictResponse({
-    schema: { example: fieldBody('email', taken) },
+    schema: { example: fieldBody('email', TAKEN_MESSAGE) },
   })
   @NoStore()
   @SerializeOptions({ schema: userResponseSchema })
@@ -73,7 +73,7 @@ export class AuthController {
     schema: { example: invalidCredentialsBody },
   })
   @ApiUnprocessableEntityResponse({
-    schema: { example: fieldBody('email', blank) },
+    schema: { example: fieldBody('email', BLANK_MESSAGE) },
   })
   @NoStore()
   @SerializeOptions({ schema: userResponseSchema })

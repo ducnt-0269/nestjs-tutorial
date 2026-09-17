@@ -22,7 +22,7 @@ import {
   forbiddenBody,
   notFoundBody,
 } from '../../common/errors/api-error.js';
-import { blank } from '../../common/errors/messages.js';
+import { BLANK_MESSAGE } from '../../common/errors/messages.js';
 import { Authenticated } from '../../common/decorators/authenticated.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import {
@@ -37,7 +37,7 @@ import { type ArticleWithAuthor, ArticlesService } from './articles.service.js';
 
 const notFound = notFoundBody('article');
 const forbidden = forbiddenBody('article');
-const blankTitle = fieldBody('title', blank);
+const blankTitle = fieldBody('title', BLANK_MESSAGE);
 
 // An article is public data, so reading one carries no guard and no no-store:
 // the response holds nothing that belongs to the reader.

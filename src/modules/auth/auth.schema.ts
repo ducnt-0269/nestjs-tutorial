@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { blank } from '../../common/errors/messages.js';
+import { BLANK_MESSAGE } from '../../common/errors/messages.js';
 import {
   emailSchema,
   newPasswordSchema,
@@ -13,7 +13,7 @@ export const registerSchema = z.object({
       email: emailSchema,
       password: newPasswordSchema,
     },
-    { error: blank },
+    { error: BLANK_MESSAGE },
   ),
 });
 
@@ -22,9 +22,9 @@ export const loginSchema = z.object({
     {
       email: emailSchema,
       // Presence only: the length rule belongs to registration.
-      password: z.string({ error: blank }).min(1, blank),
+      password: z.string({ error: BLANK_MESSAGE }).min(1, BLANK_MESSAGE),
     },
-    { error: blank },
+    { error: BLANK_MESSAGE },
   ),
 });
 

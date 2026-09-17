@@ -7,7 +7,10 @@ import {
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import { fieldBody } from '../../common/errors/api-error.js';
-import { invalid, taken } from '../../common/errors/messages.js';
+import {
+  INVALID_MESSAGE,
+  TAKEN_MESSAGE,
+} from '../../common/errors/messages.js';
 import { Authenticated } from '../../common/decorators/authenticated.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { NoStore } from '../../common/decorators/no-store.decorator.js';
@@ -43,10 +46,10 @@ export class UserController {
   @ApiOperation({ summary: 'Update the signed-in account' })
   @ApiOkResponse({ schema: { example: userResponseExample } })
   @ApiConflictResponse({
-    schema: { example: fieldBody('email', taken) },
+    schema: { example: fieldBody('email', TAKEN_MESSAGE) },
   })
   @ApiUnprocessableEntityResponse({
-    schema: { example: fieldBody('email', invalid) },
+    schema: { example: fieldBody('email', INVALID_MESSAGE) },
   })
   @NoStore()
   @SerializeOptions({ schema: userResponseSchema })

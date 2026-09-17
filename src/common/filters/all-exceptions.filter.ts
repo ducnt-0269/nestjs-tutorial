@@ -13,7 +13,7 @@ import {
   internalErrorBody,
   requestErrorBody,
 } from '../errors/api-error.js';
-import { taken } from '../errors/messages.js';
+import { TAKEN_MESSAGE } from '../errors/messages.js';
 import {
   isUniqueViolation,
   violatedColumn,
@@ -56,7 +56,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         status: HttpStatus.CONFLICT,
         // The column is what Postgres reports; naming the whole body is the
         // best the API can do when the index name does not yield one.
-        body: fieldBody(violatedColumn(exception) ?? 'body', taken),
+        body: fieldBody(violatedColumn(exception) ?? 'body', TAKEN_MESSAGE),
       };
     }
 
