@@ -15,7 +15,6 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiQuery,
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
@@ -75,17 +74,6 @@ export class ArticlesController {
 
   @Get()
   @ApiOperation({ summary: 'List articles' })
-  @ApiQuery({
-    name: 'author',
-    required: false,
-    description: 'Filter on username',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    schema: { default: 20, maximum: 100 },
-  })
-  @ApiQuery({ name: 'offset', required: false, schema: { default: 0 } })
   @ApiOkResponse({ schema: { example: articlesResponseExample } })
   @ApiUnprocessableEntityResponse({ schema: { example: invalidLimit } })
   @SerializeOptions({ schema: articlesResponseSchema })

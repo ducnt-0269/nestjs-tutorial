@@ -52,7 +52,10 @@ const pageField = (fallback: number, ceiling: number) =>
 export const listArticlesQuerySchema = z.object({
   // A repeated query parameter arrives as an array, which the bare rule answers
   // in Zod's own wording rather than from the vocabulary §4 allows.
-  author: z.string({ error: INVALID_MESSAGE }).optional(),
+  author: z
+    .string({ error: INVALID_MESSAGE })
+    .describe('Filter on username')
+    .optional(),
   limit: pageField(20, MAX_LIMIT),
   offset: pageField(0, MAX_OFFSET),
 });
