@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { BLANK_MESSAGE } from '../../common/errors/messages.js';
-import { profileFields } from '../profiles/profiles.schema.js';
+import { publicProfileSchema } from '../users/users.schema.js';
 
 // One rule for all three content fields: present, and not whitespace alone.
 // Same shape as the username rule, so an empty string is rejected rather than
@@ -47,8 +47,7 @@ export const articleResponseSchema = z
     // the response; declaring these as strings would make the serializer throw.
     createdAt: z.date().transform((at) => at.toISOString()),
     updatedAt: z.date().transform((at) => at.toISOString()),
-    // The public profile shape, owned by the profiles module and reused whole.
-    author: profileFields,
+    author: publicProfileSchema,
   })
   .transform((article) => ({ article }));
 

@@ -51,6 +51,14 @@ export const updateUserSchema = z.object({ user: updateFields.default({}) });
 export type UpdateUserBody = z.infer<typeof updateUserSchema>;
 export type UpdateUserInput = UpdateUserBody['user'];
 
+// Allowlist, same rule as the account response (§5): the email and the token
+// belong to the owner of the account, never to a public reader of it.
+export const publicProfileSchema = z.object({
+  username: z.string(),
+  bio: z.string().nullable(),
+  image: z.string().nullable(),
+});
+
 // Allowlist: fields absent here never leave the API (§5).
 export const userResponseSchema = z
   .object({
