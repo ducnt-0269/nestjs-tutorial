@@ -10,6 +10,11 @@ const validEnv = {
   JWT_SECRET: 'a'.repeat(32),
   JWT_TTL_SECONDS: '604800',
   CORS_ORIGIN: 'http://localhost:4100',
+  S3_ENDPOINT: 'http://localhost:9000',
+  S3_BUCKET: 'nestjs-tutorial-public',
+  S3_ACCESS_KEY: 'minioadmin',
+  S3_SECRET_KEY: 'minioadmin',
+  S3_REGION: 'us-east-1',
 };
 
 describe('validate', () => {
@@ -76,6 +81,23 @@ describe('validate', () => {
       'mysql://localhost:3306/db',
     ]) {
       expect(() => validate({ ...validEnv, DATABASE_URL })).toThrow(
+        EnvironmentValidationError,
+      );
+    }
+  });
+
+  it('drops a trailing slash from the S3 endpoint', () => {
+    const result = validate({
+      ...validEnv,
+      S3_ENDPOINT: 'https://s3.example.com//',
+    });
+
+    expect(result.S3_ENDPOINT).toBe('https://s3.example.com');
+  });
+
+  it('rejects an S3 endpoint that is not an http URL', () => {
+    for (const S3_ENDPOINT of ['localhost:9000', 's3://localhost:9000']) {
+      expect(() => validate({ ...validEnv, S3_ENDPOINT })).toThrow(
         EnvironmentValidationError,
       );
     }

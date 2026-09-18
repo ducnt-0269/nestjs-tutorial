@@ -1,6 +1,19 @@
-import { Body, Controller, Get, Put, SerializeOptions } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Post,
+  Put,
+  SerializeOptions,
+  UploadedFile,
+} from '@nestjs/common';
 import {
   ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -10,11 +23,13 @@ import {
 import { Authenticated } from '../../common/decorators/authenticated.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { NoStore } from '../../common/decorators/no-store.decorator.js';
-import { fieldBody } from '../../common/errors/api-error.js';
+import { fieldBody, notFoundBody } from '../../common/errors/api-error.js';
 import {
   INVALID_MESSAGE,
   TAKEN_MESSAGE,
 } from '../../common/errors/messages.js';
+import { ImageUpload } from '../attachments/image-upload.decorator.js';
+import type { UploadedImage } from '../attachments/uploaded-image.js';
 
 import {
   type UpdateUserBody,
@@ -23,6 +38,9 @@ import {
   userResponseSchema,
 } from './users.schema.js';
 import { type UserWithToken, UsersService } from './users.service.js';
+
+// The name of the form part; everything downstream receives it as an argument.
+const IMAGE_FIELD = 'image';
 
 // The caller's own account; the public plural route stays with auth.
 @ApiTags('user')
@@ -41,6 +59,42 @@ export class UserController {
 
     // The presented token, not a new one: one sign-in, one token to revoke.
     return { ...user, token: caller.token };
+  }
+
+  @Post('image')
+  @Authenticated()
+  @ImageUpload(IMAGE_FIELD)
+  @ApiOperation({ summary: 'Upload the signed-in account avatar' })
+  // An upload creates an attachment, so the default answer for a POST is the
+  // right one here, unlike signing in.
+  @ApiCreatedResponse({ schema: { example: userResponseExample } })
+  @ApiUnprocessableEntityResponse({
+    schema: { example: fieldBody(IMAGE_FIELD, INVALID_MESSAGE) },
+  })
+  @NoStore()
+  @SerializeOptions({ schema: userResponseSchema })
+  async setImage(
+    @CurrentUser() caller: Express.User,
+    @UploadedFile() file?: UploadedImage,
+  ): Promise<UserWithToken> {
+    const user = await this.usersService.setAvatar(
+      caller.id,
+      IMAGE_FIELD,
+      file,
+    );
+
+    return { ...user, token: caller.token };
+  }
+
+  @Delete('image')
+  @Authenticated()
+  // Nothing is left to answer with once the file is gone.
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Remove the signed-in account avatar' })
+  @ApiNoContentResponse()
+  @ApiNotFoundResponse({ schema: { example: notFoundBody('attachment') } })
+  removeImage(@CurrentUser() caller: Express.User): Promise<void> {
+    return this.usersService.removeAvatar(caller.id);
   }
 
   @Put()

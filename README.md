@@ -15,7 +15,7 @@ Chỉ làm API, không có giao diện.
 nvm use
 npm install
 cp .env.example .env
-docker compose up -d          # PostgreSQL 17 + Redis 7
+docker compose up -d          # PostgreSQL 17 + Redis 7 + MinIO (bucket tạo tự động)
 npm run db:generate           # sinh Prisma Client
 npm run start:dev
 ```
@@ -28,6 +28,11 @@ curl -H 'Accept-Language: vi' localhost:3000/api/hello      # {"message":"Xin ch
 ```
 
 API docs (Scalar): <http://localhost:3000/api/docs>
+
+MinIO Console: <http://localhost:9001> (đăng nhập bằng `S3_ACCESS_KEY` / `S3_SECRET_KEY`).
+
+Đã có `.env` từ trước thì phải bổ sung 5 biến `S3_*` mới, nếu không app chết ngay lúc boot —
+`.env.example` có đủ giá trị dev.
 
 ## Lệnh
 
