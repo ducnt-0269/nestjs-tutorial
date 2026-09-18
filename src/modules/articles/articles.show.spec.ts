@@ -30,6 +30,8 @@ const storedArticle = {
   authorId: 42,
   createdAt: new Date(),
   updatedAt: new Date(),
+  // Stored out of order on purpose: the response is expected to sort.
+  tags: [{ tag: { name: 'training' } }, { tag: { name: 'dragons' } }],
   author: {
     id: 42,
     email: 'jake@example.com',
@@ -88,8 +90,14 @@ describe('GET /api/articles/:slug', () => {
     });
     expect(findUnique).toHaveBeenCalledWith({
       where: { slug: storedArticle.slug },
-      include: { author: true },
+      include: { author: true, tags: { include: { tag: true } } },
     });
+  });
+
+  it('carries the tags, in a settled order', async () => {
+    const response = await read(storedArticle.slug).expect(200);
+
+    expect(response.body.article.tagList).toEqual(['dragons', 'training']);
   });
 
   it('leaves the answer cacheable', async () => {

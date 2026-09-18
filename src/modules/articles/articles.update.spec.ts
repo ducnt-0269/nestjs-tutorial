@@ -44,6 +44,7 @@ const storedArticle = {
   authorId: 42,
   createdAt: new Date(),
   updatedAt: new Date(),
+  tags: [],
   author: {
     id: 42,
     email: 'jake@example.com',

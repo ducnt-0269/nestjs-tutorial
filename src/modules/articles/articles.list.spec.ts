@@ -41,6 +41,7 @@ const storedArticle = (id: number, publishedAt: string) => ({
   authorId: 42,
   createdAt: new Date(publishedAt),
   updatedAt: new Date(publishedAt),
+  tags: [],
   author,
 });
 
@@ -128,6 +129,47 @@ describe('GET /api/articles', () => {
     expect(count).toHaveBeenCalledWith({ where });
   });
 
+  it('filters on the tag name, in the page and in the count alike', async () => {
+    await list('?tag=dragons').expect(200);
+
+    const where = { tags: { some: { tag: { name: 'dragons' } } } };
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ where }));
+    expect(count).toHaveBeenCalledWith({ where });
+  });
+
+  it('reads tag and author together as an intersection', async () => {
+    await list('?tag=dragons&author=jake').expect(200);
+
+    // One where carrying both: an article missing either one is off the page,
+    // which is what makes this narrower than a filter on tag alone.
+    const where = {
+      author: { username: 'jake' },
+      tags: { some: { tag: { name: 'dragons' } } },
+    };
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ where }));
+    expect(count).toHaveBeenCalledWith({ where });
+  });
+
+  it('asks for no filter at all when neither is given', async () => {
+    await list().expect(200);
+
+    expect(count).toHaveBeenCalledWith({ where: {} });
+  });
+
+  it('carries the tags of each listed article', async () => {
+    findMany.mockResolvedValue([
+      {
+        ...storedArticle(3, '2026-09-16T10:00:00Z'),
+        tags: [{ tag: { name: 'training' } }, { tag: { name: 'dragons' } }],
+      },
+    ]);
+    count.mockResolvedValue(1);
+
+    const response = await list().expect(200);
+
+    expect(response.body.articles[0].tagList).toEqual(['dragons', 'training']);
+  });
+
   it('leaves the body out of the listed articles', async () => {
     const response = await list().expect(200);
 
@@ -169,6 +211,7 @@ describe('GET /api/articles', () => {
     ['?limit=4294967296', 'limit'],
     ['?offset=-1', 'offset'],
     ['?author=jake&author=alice', 'author'],
+    ['?tag=dragons&tag=training', 'tag'],
   ])('refuses %s', async (query, field) => {
     await list(query).expect(422, { errors: { [field]: ['is invalid'] } });
 

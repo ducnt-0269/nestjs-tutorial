@@ -63,10 +63,17 @@ const submitted = {
   },
 };
 
+// Stands in for the tags table: which id a name is stored under. 'dragons' is
+// already there, so a request naming it is the mixed case the spec asks about.
+const storedTagIds = new Map([['dragons', 1]]);
+let nextTagId = 2;
+
 describe('POST /api/articles', () => {
   let app: INestApplication;
   let jwt: JwtService;
   const create = vi.fn();
+  const tagCreateMany = vi.fn();
+  const tagFindMany = vi.fn();
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -80,7 +87,10 @@ describe('POST /api/articles', () => {
       ],
     })
       .overrideProvider(PrismaService)
-      .useValue({ article: { create } })
+      .useValue({
+        article: { create },
+        tag: { createMany: tagCreateMany, findMany: tagFindMany },
+      })
       .overrideProvider(TokenRevocationService)
       .useValue({ isRevoked: () => Promise.resolve(false) })
       .compile();
@@ -97,17 +107,53 @@ describe('POST /api/articles', () => {
 
   beforeEach(() => {
     create.mockReset();
+    tagCreateMany.mockReset();
+    tagFindMany.mockReset();
+    storedTagIds.clear();
+    storedTagIds.set('dragons', 1);
+    nextTagId = 2;
+
+    // Only a name absent from the table lands a row: what skipDuplicates buys
+    // against the unique index, standing in for it here.
+    tagCreateMany.mockImplementation(
+      ({ data }: { data: { name: string }[] }) => {
+        const fresh = data.filter(({ name }) => !storedTagIds.has(name));
+        for (const { name } of fresh) storedTagIds.set(name, nextTagId++);
+
+        return Promise.resolve({ count: fresh.length });
+      },
+    );
+
+    tagFindMany.mockImplementation(
+      ({ where }: { where: { name: { in: string[] } } }) =>
+        Promise.resolve(
+          where.name.in.map((name) => ({ id: storedTagIds.get(name) })),
+        ),
+    );
+
     // Echoes what the service asked to store, so the response carries the slug
-    // that was really generated rather than one written into the fixture.
-    create.mockImplementation(({ data }: { data: Record<string, unknown> }) =>
-      Promise.resolve({
+    // that was really generated rather than one written into the fixture. The
+    // tags come back as the join rows the include really returns, not as the
+    // nested write that was sent.
+    create.mockImplementation(({ data }: { data: Record<string, unknown> }) => {
+      const { tags, ...article } = data as {
+        tags: { create: { tagId: number }[] };
+      };
+      const nameOf = new Map(
+        [...storedTagIds].map(([name, id]) => [id, name] as const),
+      );
+
+      return Promise.resolve({
         id: 7,
-        ...data,
+        ...article,
         createdAt: new Date(),
         updatedAt: new Date(),
+        tags: tags.create.map(({ tagId }) => ({
+          tag: { name: nameOf.get(tagId) },
+        })),
         author: storedAuthor,
-      }),
-    );
+      });
+    });
   });
 
   function publish(body: object, token = jwt.sign({ sub: '42' })) {
@@ -181,6 +227,7 @@ describe('POST /api/articles', () => {
       'createdAt',
       'description',
       'slug',
+      'tagList',
       'title',
       'updatedAt',
     ]);
@@ -217,6 +264,66 @@ describe('POST /api/articles', () => {
     await publish({
       article: { ...submitted.article, title: '   ' },
     }).expect(422, { errors: { title: ["can't be blank"] } });
+
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('carries back the tags it was given', async () => {
+    const response = await publish({
+      article: { ...submitted.article, tagList: ['training', 'dragons'] },
+    }).expect(201);
+
+    expect(response.body.article.tagList).toEqual(['dragons', 'training']);
+  });
+
+  it('stores one row for a name already taken and one for a new name', async () => {
+    await publish({
+      article: { ...submitted.article, tagList: ['dragons', 'training'] },
+    }).expect(201);
+
+    // Both names are offered; only the absent one is written, and the article
+    // connects to the id each name already holds.
+    expect(tagCreateMany).toHaveBeenCalledWith({
+      data: [{ name: 'dragons' }, { name: 'training' }],
+      skipDuplicates: true,
+    });
+    expect(await tagCreateMany.mock.results[0]?.value).toEqual({ count: 1 });
+    expect(dataOf().tags).toEqual({ create: [{ tagId: 1 }, { tagId: 2 }] });
+  });
+
+  it('collapses a name repeated inside one request', async () => {
+    const response = await publish({
+      article: { ...submitted.article, tagList: ['dragons', 'dragons'] },
+    }).expect(201);
+
+    expect(tagCreateMany).toHaveBeenCalledWith({
+      data: [{ name: 'dragons' }],
+      skipDuplicates: true,
+    });
+    expect(response.body.article.tagList).toEqual(['dragons']);
+  });
+
+  it('accepts an empty tagList and answers with an empty list', async () => {
+    const response = await publish({
+      article: { ...submitted.article, tagList: [] },
+    }).expect(201);
+
+    expect(response.body.article.tagList).toEqual([]);
+    // No names to settle, so the tags table is never touched.
+    expect(tagCreateMany).not.toHaveBeenCalled();
+    expect(tagFindMany).not.toHaveBeenCalled();
+  });
+
+  it('accepts an article carrying no tagList at all', async () => {
+    const response = await publish(submitted).expect(201);
+
+    expect(response.body.article.tagList).toEqual([]);
+  });
+
+  it('rejects a tag that is blank', async () => {
+    await publish({
+      article: { ...submitted.article, tagList: ['   '] },
+    }).expect(422, { errors: { tagList: ["can't be blank"] } });
 
     expect(create).not.toHaveBeenCalled();
   });

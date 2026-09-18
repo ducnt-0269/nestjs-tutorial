@@ -11,6 +11,7 @@ import { ArticlesModule } from './modules/articles/articles.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { CommentsModule } from './modules/comments/comments.module.js';
 import { ProfilesModule } from './modules/profiles/profiles.module.js';
+import { TagsModule } from './modules/tags/tags.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
@@ -41,6 +42,7 @@ import { RedisModule } from './redis/redis.module.js';
     ProfilesModule,
     ArticlesModule,
     CommentsModule,
+    TagsModule,
   ],
   controllers: [HelloController],
 })

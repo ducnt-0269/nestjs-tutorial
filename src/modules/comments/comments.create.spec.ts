@@ -44,6 +44,8 @@ const storedArticle = {
   authorId: 42,
   createdAt: new Date(),
   updatedAt: new Date(),
+  // The article is read through the articles service, which includes them.
+  tags: [],
   author: {
     id: 42,
     email: 'jake@example.com',
