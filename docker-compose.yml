@@ -76,6 +76,22 @@ services:
         printf '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetObject"],"Resource":["arn:aws:s3:::%s/*"]}]}' "$$BUCKET" > /tmp/policy.json
         mc anonymous set-json /tmp/policy.json "local/$$BUCKET"
 
+  # Speaks SMTP but delivers nothing: every message stops here and is read in
+  # the web interface on 8025. Development therefore exercises the real send
+  # path without a real recipient ever receiving anything.
+  mailpit:
+    image: axllent/mailpit:v1.28
+    container_name: nestjs-tutorial-mailpit
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:1025:1025'
+      - '127.0.0.1:8025:8025'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '-', 'http://localhost:8025/readyz']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 volumes:
   postgres-data:
   redis-data:

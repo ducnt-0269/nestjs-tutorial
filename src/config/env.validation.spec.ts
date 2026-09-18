@@ -15,6 +15,11 @@ const validEnv = {
   S3_ACCESS_KEY: 'minioadmin',
   S3_SECRET_KEY: 'minioadmin',
   S3_REGION: 'us-east-1',
+  MAIL_HOST: 'localhost',
+  MAIL_PORT: '1025',
+  MAIL_FROM: 'no-reply@example.com',
+  PASSWORD_RESET_URL: 'http://localhost:4100/password-reset',
+  PASSWORD_RESET_TTL_SECONDS: '3600',
 };
 
 describe('validate', () => {
@@ -93,6 +98,31 @@ describe('validate', () => {
     });
 
     expect(result.S3_ENDPOINT).toBe('https://s3.example.com');
+  });
+
+  it('drops a trailing slash from the password reset URL', () => {
+    const result = validate({
+      ...validEnv,
+      PASSWORD_RESET_URL: 'https://app.example.com/password-reset/',
+    });
+
+    expect(result.PASSWORD_RESET_URL).toBe(
+      'https://app.example.com/password-reset',
+    );
+  });
+
+  it('rejects a reset token lifetime that is not a positive integer', () => {
+    for (const PASSWORD_RESET_TTL_SECONDS of ['1h', '0', '-1', '1.5']) {
+      expect(() =>
+        validate({ ...validEnv, PASSWORD_RESET_TTL_SECONDS }),
+      ).toThrow(EnvironmentValidationError);
+    }
+  });
+
+  it('rejects a sender that is not an email address', () => {
+    expect(() => validate({ ...validEnv, MAIL_FROM: 'no-reply' })).toThrow(
+      EnvironmentValidationError,
+    );
   });
 
   it('rejects an S3 endpoint that is not an http URL', () => {

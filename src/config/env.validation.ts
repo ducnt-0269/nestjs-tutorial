@@ -47,6 +47,26 @@ export const envSchema = z.object({
   // The storage server used in development ignores this value, but the SDK
   // requires one to be present.
   S3_REGION: z.string().min(1),
+
+  // The mail server captured in development asks for no credentials, so an
+  // address and a port are the whole of it. Coerced and bounded like the
+  // application port, because a value outside that range is a typo.
+  MAIL_HOST: z.string().min(1),
+  MAIL_PORT: z.coerce.number().int().min(1).max(65535),
+  // The envelope sender. A malformed address is refused by the mail server at
+  // send time, which is long after the response went out, so it is caught here
+  // instead of surfacing as a job that can never succeed.
+  MAIL_FROM: z.email(),
+
+  // Where the mailed link lands. This API renders no page, so the address
+  // belongs to whichever client owns the form; the token is appended to it.
+  // A trailing slash is dropped for the same reason as the storage endpoint.
+  PASSWORD_RESET_URL: z
+    .url({ protocol: /^https?$/, hostname: /.+/ })
+    .transform((value) => value.replace(/\/+$/, '')),
+  // Seconds rather than a duration string, so this lifetime and the sign-in
+  // token lifetime are read the same way.
+  PASSWORD_RESET_TTL_SECONDS: z.coerce.number().int().positive(),
 });
 
 export type EnvironmentVariables = z.infer<typeof envSchema>;

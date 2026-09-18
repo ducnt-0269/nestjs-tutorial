@@ -30,6 +30,11 @@ export default defineConfig({
       S3_ACCESS_KEY: 'key',
       S3_SECRET_KEY: 'secret',
       S3_REGION: 'us-east-1',
+      MAIL_HOST: 'mail.invalid',
+      MAIL_PORT: '1025',
+      MAIL_FROM: 'no-reply@nestjs-tutorial.invalid',
+      PASSWORD_RESET_URL: 'http://client.invalid/password-reset',
+      PASSWORD_RESET_TTL_SECONDS: '3600',
     },
   },
 });
