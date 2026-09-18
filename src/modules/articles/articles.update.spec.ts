@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+
 import type { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -13,12 +14,14 @@ import {
   it,
   vi,
 } from 'vitest';
+
 import { CommonModule } from '../../common/common.module.js';
 import { Prisma } from '../../generated/prisma/client.js';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { TokenRevocationService } from '../auth/token-revocation.service.js';
+
 import { ArticlesModule } from './articles.module.js';
 
 const secret = 'test-secret-'.padEnd(32, 'x');
@@ -137,7 +140,9 @@ describe('PUT /api/articles/:slug', () => {
     await edit(
       { article: { body: 'Hijacked.' } },
       jwt.sign({ sub: '99' }),
-    ).expect(403, { errors: { article: ['forbidden'] } });
+    ).expect(403, {
+      errors: { article: ['forbidden'] },
+    });
 
     expect(update).not.toHaveBeenCalled();
   });
@@ -148,7 +153,9 @@ describe('PUT /api/articles/:slug', () => {
     await edit(
       { article: { body: 'Rewritten.' } },
       jwt.sign({ sub: '99' }),
-    ).expect(404, { errors: { article: ['not found'] } });
+    ).expect(404, {
+      errors: { article: ['not found'] },
+    });
 
     expect(update).not.toHaveBeenCalled();
   });

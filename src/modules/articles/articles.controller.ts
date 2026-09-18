@@ -18,6 +18,9 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+
+import { Authenticated } from '../../common/decorators/authenticated.decorator.js';
+import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import {
   fieldBody,
   forbiddenBody,
@@ -27,8 +30,7 @@ import {
   BLANK_MESSAGE,
   INVALID_MESSAGE,
 } from '../../common/errors/messages.js';
-import { Authenticated } from '../../common/decorators/authenticated.decorator.js';
-import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
+
 import {
   type CreateArticleBody,
   articleResponseExample,

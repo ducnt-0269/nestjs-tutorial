@@ -1,5 +1,7 @@
 import 'reflect-metadata';
+
 import { describe, expect, it } from 'vitest';
+
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 
 // The one branch no request can reach: an error raised inside the strategy.

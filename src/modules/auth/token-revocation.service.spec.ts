@@ -1,8 +1,12 @@
 import 'reflect-metadata';
+
 import { createHash, randomUUID } from 'node:crypto';
+
 import { JwtService } from '@nestjs/jwt';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { RedisService } from '../../redis/redis.service.js';
+
 import { TokenRevocationService } from './token-revocation.service.js';
 
 const secret = 'test-secret-'.padEnd(32, 'x');

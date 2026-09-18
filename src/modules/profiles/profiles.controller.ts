@@ -5,8 +5,10 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+
 import { notFoundBody } from '../../common/errors/api-error.js';
 import type { SafeUser } from '../users/users.service.js';
+
 import {
   profileResponseExample,
   profileResponseSchema,

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+
 import { notFound } from '../../common/errors/api-error.js';
 import type { SafeUser } from '../users/users.service.js';
 import { UsersService } from '../users/users.service.js';

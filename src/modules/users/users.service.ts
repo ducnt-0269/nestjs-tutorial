@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
+
 import { invalidToken } from '../../common/errors/api-error.js';
 import type { User } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+
 import { hashPassword, passwordMatches } from './password.js';
 import type { UpdateUserInput } from './users.schema.js';
 

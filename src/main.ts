@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import type { Response } from 'express';
+
 import { AppModule } from './app.module.js';
 import { TOKEN_SCHEME } from './common/guards/jwt-auth.guard.js';
 

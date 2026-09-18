@@ -10,7 +10,7 @@ TypeScript theo Google TypeScript Style Guide. Dùng tiếng Anh cho code, comme
 message và OpenAPI description. Nội dung trong `docs/`, `plans/` và `README.md` dùng tiếng
 Việt, giữ technical term bằng tiếng Anh. Nội dung bản dịch i18n dùng ngôn ngữ tương ứng.
 
-Project dùng oxlint cho lint, Prettier cho formatting, Vitest và Supertest cho test.
+Project dùng Oxlint cho lint, Oxfmt cho formatting và import sorting, Vitest và Supertest cho test.
 Script cụ thể được định nghĩa trong `package.json`.
 
 | Command | Mục đích |
@@ -18,7 +18,7 @@ Script cụ thể được định nghĩa trong `package.json`.
 | `npm run lint` | Chạy oxlint trên `src/`, gồm type-aware check; warning làm command thất bại |
 | `npm run typecheck` | Kiểm tra TypeScript type |
 | `npm run format:check` | Kiểm tra formatting của TypeScript trong `src/` |
-| `npm run format` | Ghi lại formatting bằng Prettier |
+| `npm run format` | Ghi lại formatting và tự động sắp xếp import bằng Oxfmt |
 | `npm test` | Chạy test suite bằng Vitest |
 | `npm run build` | Kiểm tra application build |
 
@@ -143,7 +143,7 @@ Scope theo milestone issue; giữ diff tập trung, ưu tiên mỗi pull request
 
 - Sunlint không có error, đính kèm kết quả.
 - Toàn bộ check cấu hình trong [CI](../.github/workflows/ci.yml) phải pass, hiện gồm typecheck,
-  build, test, oxlint, Prettier và Sunlint.
+  build, test, Oxlint, Oxfmt và Sunlint.
 - Đã self-review toàn bộ diff.
 - Có ít nhất một approval.
 

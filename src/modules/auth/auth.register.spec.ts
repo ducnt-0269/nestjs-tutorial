@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+
 import type { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -14,10 +15,12 @@ import {
   it,
   vi,
 } from 'vitest';
+
 import { CommonModule } from '../../common/common.module.js';
 import { Prisma } from '../../generated/prisma/client.js';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+
 import { AuthModule } from './auth.module.js';
 import { TokenRevocationService } from './token-revocation.service.js';
 

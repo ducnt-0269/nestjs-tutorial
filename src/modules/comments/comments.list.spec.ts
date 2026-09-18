@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+
 import type { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
@@ -12,9 +13,11 @@ import {
   it,
   vi,
 } from 'vitest';
+
 import { CommonModule } from '../../common/common.module.js';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+
 import { CommentsModule } from './comments.module.js';
 
 const slug = 'how-to-train-your-dragon-a3f91c7d';

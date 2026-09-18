@@ -1,8 +1,10 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { PrismaPg } from '@prisma/adapter-pg';
-import { createPrismaAdapter } from './prisma-adapter.js';
+
 import { PrismaClient } from '../generated/prisma/client.js';
+
+import { createPrismaAdapter } from './prisma-adapter.js';
 
 // The class generic makes the generated result types drop the password field.
 const omit = { user: { password: true } } as const;

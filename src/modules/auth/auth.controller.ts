@@ -15,19 +15,21 @@ import {
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+
+import { Authenticated } from '../../common/decorators/authenticated.decorator.js';
+import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
+import { NoStore } from '../../common/decorators/no-store.decorator.js';
 import {
   fieldBody,
   invalidCredentialsBody,
 } from '../../common/errors/api-error.js';
 import { BLANK_MESSAGE, TAKEN_MESSAGE } from '../../common/errors/messages.js';
-import { Authenticated } from '../../common/decorators/authenticated.decorator.js';
-import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
-import { NoStore } from '../../common/decorators/no-store.decorator.js';
 import {
   userResponseExample,
   userResponseSchema,
 } from '../users/users.schema.js';
 import type { UserWithToken } from '../users/users.service.js';
+
 import {
   type LoginBody,
   loginSchema,

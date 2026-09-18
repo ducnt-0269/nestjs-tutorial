@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { EnvironmentValidationError, validate } from './env.validation.js';
 
 const validEnv = {

@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+
 import { type INestApplication, Logger } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
@@ -12,10 +13,11 @@ import {
   it,
   vi,
 } from 'vitest';
-import { CommonModule } from '../common.module.js';
+
 import { ProfilesModule } from '../../modules/profiles/profiles.module.js';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { CommonModule } from '../common.module.js';
 
 describe('error contract, paths no module owns', () => {
   let app: INestApplication;

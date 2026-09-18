@@ -6,14 +6,16 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+
+import { Authenticated } from '../../common/decorators/authenticated.decorator.js';
+import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
+import { NoStore } from '../../common/decorators/no-store.decorator.js';
 import { fieldBody } from '../../common/errors/api-error.js';
 import {
   INVALID_MESSAGE,
   TAKEN_MESSAGE,
 } from '../../common/errors/messages.js';
-import { Authenticated } from '../../common/decorators/authenticated.decorator.js';
-import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
-import { NoStore } from '../../common/decorators/no-store.decorator.js';
+
 import {
   type UpdateUserBody,
   updateUserSchema,

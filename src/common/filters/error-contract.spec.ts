@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+
 import { type INestApplication, Logger } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
@@ -12,14 +13,15 @@ import {
   it,
   vi,
 } from 'vitest';
+
 import { Prisma } from '../../generated/prisma/client.js';
-import { CommonModule } from '../common.module.js';
 import { AuthModule } from '../../modules/auth/auth.module.js';
 import { TokenRevocationService } from '../../modules/auth/token-revocation.service.js';
-import { PrismaModule } from '../../prisma/prisma.module.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
 import { ProfilesModule } from '../../modules/profiles/profiles.module.js';
 import { UsersModule } from '../../modules/users/users.module.js';
+import { PrismaModule } from '../../prisma/prisma.module.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { CommonModule } from '../common.module.js';
 
 const secret = 'test-secret-'.padEnd(32, 'x');
 

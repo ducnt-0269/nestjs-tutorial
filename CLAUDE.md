@@ -14,7 +14,7 @@ npm run start:dev
 npm test                     # unit (Vitest)
 npm run lint                 # oxlint
 npm run typecheck            # only step that type-checks *.spec.ts; nest build skips them
-npm run format:check         # Prettier — CI gate
+npm run format:check         # Oxfmt — CI gate, including import order
 npm run lint:sun             # Sunlint — must report 0 errors before any PR
 npm run db:generate          # regenerate Prisma Client after a schema change
 ```
