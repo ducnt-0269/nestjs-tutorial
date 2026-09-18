@@ -16,6 +16,7 @@ flowchart LR
     Client[Client] --> API[NestJS API]
     API --> DB[(PostgreSQL)]
     API --> Redis[(Redis)]
+    API --> SMTP[SMTP server]
 ```
 
 | Thành phần | Trách nhiệm |
@@ -23,6 +24,7 @@ flowchart LR
 | NestJS API | Xử lý request, authentication, authorization và business logic |
 | PostgreSQL | Primary data source cho tài khoản và nội dung |
 | Redis | State ngắn hạn cho token revocation và backend cho queue |
+| SMTP server | Nhận mail ứng dụng gửi đi; development dùng server capture thư thay vì gửi thật |
 
 Prisma quản lý data access và database schema. Zod định nghĩa validation và response
 schema. OpenAPI cung cấp contract để client tích hợp với API.
@@ -33,14 +35,17 @@ schema. OpenAPI cung cấp contract để client tích hợp với API.
 |---|---|---|
 | `auth` | Registration, login, token issuance và token verification | `users` |
 | `users` | Tài khoản và profile của người dùng | `attachments` |
+| `password-reset` | Yêu cầu đặt lại mật khẩu qua email và đặt mật khẩu mới bằng reset token | `users` |
 | `profiles` | Profile công khai và quan hệ theo dõi | `users` |
 | `articles` | Bài viết, feed và yêu thích | `users`, `tags`, `attachments` |
 | `comments` | Bình luận trên bài viết | `articles`, `users` |
 | `tags` | Nhãn phân loại bài viết | — |
 | `attachments` | Tệp đính kèm và liên kết với owner | — |
 
-Các infrastructure module như configuration, database, Redis và xử lý request dùng chung không
-phụ thuộc domain module. Domain module có thể sử dụng infrastructure cần thiết cho trách nhiệm của mình.
+Các infrastructure module như configuration, database, Redis, mail, queue và xử lý request dùng chung
+không phụ thuộc domain module. Domain module có thể sử dụng infrastructure cần thiết cho trách nhiệm của mình.
+`mail` chỉ biết cách chuyển một message tới mail server; nội dung message thuộc về domain module sở hữu
+nghiệp vụ gửi nó.
 
 Dependency giữa domain module đi một chiều theo bảng trên. Logic được dùng chung đặt tại
 module sở hữu dữ liệu hoặc khái niệm đó; chẳng hạn thông tin người dùng và quan hệ theo dõi
@@ -60,6 +65,7 @@ tài khoản mà không cần phụ thuộc ngược vào `auth`.
 | Favorite | Quan hệ một User yêu thích một Article |
 | Follow | Quan hệ có hướng giữa người theo dõi và người được theo dõi |
 | Attachment | Tệp có thể thuộc nhiều loại owner, chẳng hạn User hoặc Article |
+| PasswordResetToken | Token đặt lại mật khẩu thuộc một User; chỉ digest được lưu, row bị xoá khi dùng hoặc hết hạn |
 
 PostgreSQL bảo vệ referential integrity của các relationship thông thường bằng constraint.
 Attachment là ngoại lệ có chủ đích: polymorphic relationship được quản lý ở application layer,
@@ -152,6 +158,22 @@ xoá owner và bảo đảm policy tương ứng được đăng ký.
 
 Avatar dùng Attachment làm nguồn quản lý tệp, còn `User.image` giữ URL để đọc profile.
 Theo contract RealWorld, cập nhật profile cũng cho phép client đặt URL ảnh trực tiếp.
+
+### Reset token chỉ lưu digest và mail rời request path qua queue
+
+Mail không gửi trong request: service ghi token rồi đẩy job vào queue trên Redis, worker gửi với
+exponential backoff. Job dùng hết số lần thử nằm lại trong failed set để người vận hành đọc và gửi
+lại. Queue dùng connection Redis riêng, vì client dùng chung được cấu hình fail command khi Redis
+vắng mặt còn worker cần điều ngược lại.
+
+Database chỉ lưu sha256 digest của token đã gửi, cùng cách token revocation lưu sign-in token; token
+thật chỉ tồn tại trong link gửi đi. Dùng token là một delete duy nhất mang điều kiện hết hạn ngay
+trong `where`, và ghi mật khẩu mới nằm trong cùng transaction: token vì vậy chỉ dùng được một lần và
+hai request đến cùng lúc không thể cùng đổi mật khẩu. Một scheduled job mỗi giờ xoá row quá hạn, không
+gắn với request nào.
+
+Đánh đổi: runtime có thêm worker và scheduled job; response chỉ xác nhận yêu cầu đã nhận chứ không
+bảo đảm mail đã tới, và vì chỉ lưu digest nên không thể gửi lại link cũ mà phải phát hành token mới.
 
 ## 6. Phạm vi cập nhật tài liệu
 
