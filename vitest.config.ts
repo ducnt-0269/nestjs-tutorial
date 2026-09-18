@@ -25,6 +25,11 @@ export default defineConfig({
       JWT_SECRET: 'test-secret-xxxxxxxxxxxxxxxxxxxxxx',
       JWT_TTL_SECONDS: '3600',
       CORS_ORIGIN: 'http://localhost:4100',
+      S3_ENDPOINT: 'http://storage.invalid:9000',
+      S3_BUCKET: 'bucket',
+      S3_ACCESS_KEY: 'key',
+      S3_SECRET_KEY: 'secret',
+      S3_REGION: 'us-east-1',
     },
   },
 });
