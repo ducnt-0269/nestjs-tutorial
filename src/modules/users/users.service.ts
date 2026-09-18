@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { invalidToken, notFound } from '../../common/errors/api-error.js';
-import { AttachmentOwner, type User } from '../../generated/prisma/client.js';
+import {
+  AttachmentOwner,
+  Prisma,
+  type User,
+} from '../../generated/prisma/client.js';
 import { isRowGone } from '../../prisma/prisma-errors.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AttachmentsService } from '../attachments/attachments.service.js';
@@ -158,6 +162,31 @@ export class UsersService {
   // an empty result.
   findByUsername(username: string): Promise<SafeUser | null> {
     return this.prismaService.user.findUnique({ where: { username } });
+  }
+
+  // An email is all a password reset is given to go on, and finding the
+  // account by it belongs to the module that owns the column.
+  findByEmail(email: string): Promise<SafeUser | null> {
+    return this.prismaService.user.findUnique({ where: { email } });
+  }
+
+  // Takes the transaction rather than opening one, so this write and whatever
+  // authorised it commit together or not at all. Hashing stays on this side of
+  // the boundary for the reason it does on every other write: no caller is
+  // handed the opportunity to store a plaintext password. The cost is that the
+  // transaction stays open for as long as bcrypt takes, which is the price of
+  // not letting a hash cross the boundary instead. No P2025 branch: the row
+  // this transaction already holds is the one a concurrent delete would have
+  // to take, so it waits rather than leaving this update nothing to act on.
+  async setPassword(
+    tx: Prisma.TransactionClient,
+    id: number,
+    password: string,
+  ): Promise<void> {
+    await tx.user.update({
+      where: { id },
+      data: { password: await hashPassword(password) },
+    });
   }
 
   // The one query that opts back into the hash (§5). It compares here as well,

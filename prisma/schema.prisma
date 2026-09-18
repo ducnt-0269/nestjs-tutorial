@@ -23,8 +23,9 @@ model User {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  articles Article[]
-  comments Comment[]
+  articles            Article[]
+  comments            Comment[]
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
 }
@@ -118,4 +119,23 @@ model Attachment {
 
   @@index([ownerType, ownerId])
   @@map("attachments")
+}
+
+// Only the digest of the mailed token is kept, so whoever reads this table
+// cannot rebuild a working link out of it. The row is deleted when it is
+// spent, which is what makes a second attempt fail, and the expiry is checked
+// on that same delete rather than trusted to the recurring sweep, because a
+// row can outlive its lifetime until the sweep next runs.
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique @map("token_hash")
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
 }
