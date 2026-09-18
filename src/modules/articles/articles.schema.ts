@@ -1,6 +1,11 @@
 import { z } from 'zod';
-import { BLANK_MESSAGE } from '../../common/errors/messages.js';
+import {
+  BLANK_MESSAGE,
+  INVALID_MESSAGE,
+} from '../../common/errors/messages.js';
+import { INT4_MAX } from '../../prisma/prisma.constants.js';
 import { publicProfileSchema } from '../users/users.schema.js';
+import { DEFAULT_LIMIT, MAX_LIMIT } from './articles.constants.js';
 
 // One rule for all three content fields: present, and not whitespace alone.
 // Same shape as the username rule, so an empty string is rejected rather than
@@ -30,26 +35,55 @@ export const updateArticleSchema = z.object({
   article: articleFields.partial().default({}),
 });
 
+const pageField = (fallback: number, ceiling: number) =>
+  z.coerce
+    .number({ error: INVALID_MESSAGE })
+    .int(INVALID_MESSAGE)
+    .min(0, INVALID_MESSAGE)
+    .max(ceiling, INVALID_MESSAGE)
+    .default(fallback);
+
+export const listArticlesQuerySchema = z.object({
+  // A repeated query parameter arrives as an array, which the bare rule answers
+  // in Zod's own wording rather than from the vocabulary §4 allows.
+  author: z
+    .string({ error: INVALID_MESSAGE })
+    .describe('Filter on username')
+    .optional(),
+  limit: pageField(DEFAULT_LIMIT, MAX_LIMIT),
+  offset: pageField(0, INT4_MAX),
+});
+
 export type CreateArticleBody = z.infer<typeof createArticleSchema>;
 export type CreateArticleInput = CreateArticleBody['article'];
 export type UpdateArticleBody = z.infer<typeof updateArticleSchema>;
 export type UpdateArticleInput = UpdateArticleBody['article'];
+export type ListArticlesQuery = z.infer<typeof listArticlesQuerySchema>;
 
 // Allowlist (§5): the row carries an id and an author id, and neither is
 // declared here, so neither leaves the API.
-export const articleResponseSchema = z
-  .object({
-    slug: z.string(),
-    title: z.string(),
-    description: z.string(),
-    body: z.string(),
-    // Prisma answers with a Date. Converting here is what puts milliseconds in
-    // the response; declaring these as strings would make the serializer throw.
-    createdAt: z.date().transform((at) => at.toISOString()),
-    updatedAt: z.date().transform((at) => at.toISOString()),
-    author: publicProfileSchema,
-  })
-  .transform((article) => ({ article }));
+const articleShape = z.object({
+  slug: z.string(),
+  title: z.string(),
+  description: z.string(),
+  body: z.string(),
+  // Prisma answers with a Date. Converting here is what puts milliseconds in
+  // the response; declaring these as strings would make the serializer throw.
+  createdAt: z.date().transform((at) => at.toISOString()),
+  updatedAt: z.date().transform((at) => at.toISOString()),
+  author: publicProfileSchema,
+});
+
+export const articleResponseSchema = articleShape.transform((article) => ({
+  article,
+}));
+
+// The single shape minus the body, so a field added to one is a field the other
+// has to answer for.
+export const articlesResponseSchema = z.object({
+  articles: z.array(articleShape.omit({ body: true })),
+  articlesCount: z.number(),
+});
 
 export const articleResponseExample = {
   article: {
@@ -61,4 +95,18 @@ export const articleResponseExample = {
     updatedAt: '2026-09-16T08:00:00.000Z',
     author: { username: 'jake', bio: null, image: null },
   },
+};
+
+export const articlesResponseExample = {
+  articles: [
+    {
+      slug: 'how-to-train-your-dragon-a3f91c7d',
+      title: 'How to train your dragon',
+      description: 'Ever wonder how?',
+      createdAt: '2026-09-16T08:00:00.000Z',
+      updatedAt: '2026-09-16T08:00:00.000Z',
+      author: { username: 'jake', bio: null, image: null },
+    },
+  ],
+  articlesCount: 1,
 };

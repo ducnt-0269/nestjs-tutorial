@@ -6,11 +6,17 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import type { SafeUser } from '../users/users.service.js';
 import type {
   CreateArticleInput,
+  ListArticlesQuery,
   UpdateArticleInput,
 } from './articles.schema.js';
 import { slugFor } from './slug.js';
 
 export type ArticleWithAuthor = Article & { author: SafeUser };
+type ArticleListItem = Omit<ArticleWithAuthor, 'body'>;
+export type ArticleList = {
+  articles: ArticleListItem[];
+  articlesCount: number;
+};
 
 @Injectable()
 export class ArticlesService {
@@ -28,6 +34,32 @@ export class ArticlesService {
         include: { author: true },
       }),
     );
+  }
+
+  // Two statements whatever the page size, plus one for the authors of the page.
+  // Side by side rather than in a transaction, which under the default isolation
+  // would hand them two snapshots anyway.
+  async list(query: ListArticlesQuery): Promise<ArticleList> {
+    const where: Prisma.ArticleWhereInput = query.author
+      ? { author: { username: query.author } }
+      : {};
+
+    const [articles, articlesCount] = await Promise.all([
+      this.prismaService.article.findMany({
+        where,
+        // The largest column, and no field in the list response holds it.
+        omit: { body: true },
+        include: { author: true },
+        // The id breaks ties: two articles published in the same millisecond
+        // would otherwise swap places between pages, losing or repeating a row.
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: query.limit,
+        skip: query.offset,
+      }),
+      this.prismaService.article.count({ where }),
+    ]);
+
+    return { articles, articlesCount };
   }
 
   // Named for the context that decides the 404, the way the profile lookup is:
