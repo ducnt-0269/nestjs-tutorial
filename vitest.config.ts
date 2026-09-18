@@ -9,5 +9,22 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.spec.ts'],
+    // Every variable the environment schema requires. Suites pass that same
+    // schema to the configuration module, so a value reaches them converted
+    // exactly as it reaches the running application: the token lifetime as a
+    // number, the allowed origins as a list.
+    //
+    // The hosts are deliberately unroutable. A suite that forgets to replace an
+    // outside dependency then fails instead of quietly reaching the one running
+    // on this machine.
+    env: {
+      NODE_ENV: 'test',
+      PORT: '3000',
+      DATABASE_URL: 'postgresql://test:test@postgres.invalid:5432/test',
+      REDIS_URL: 'redis://redis.invalid:6379/0',
+      JWT_SECRET: 'test-secret-xxxxxxxxxxxxxxxxxxxxxx',
+      JWT_TTL_SECONDS: '3600',
+      CORS_ORIGIN: 'http://localhost:4100',
+    },
   },
 });

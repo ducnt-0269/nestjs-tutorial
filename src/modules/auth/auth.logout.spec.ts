@@ -18,6 +18,7 @@ import {
 } from 'vitest';
 
 import { CommonModule } from '../../common/common.module.js';
+import { validate } from '../../config/env.validation.js';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { REDIS_CLIENT } from '../../redis/redis.constants.js';
@@ -26,7 +27,6 @@ import { UsersModule } from '../users/users.module.js';
 
 import { AuthModule } from './auth.module.js';
 
-const secret = 'test-secret-'.padEnd(32, 'x');
 const ttlSeconds = 3600;
 
 const storedUser = {
@@ -65,7 +65,8 @@ describe('POST /api/users/logout', () => {
         ConfigModule.forRoot({
           isGlobal: true,
           ignoreEnvFile: true,
-          load: [() => ({ JWT_SECRET: secret, JWT_TTL_SECONDS: ttlSeconds })],
+          validate,
+          load: [() => ({ JWT_TTL_SECONDS: ttlSeconds })],
         }),
         CommonModule,
         PrismaModule,

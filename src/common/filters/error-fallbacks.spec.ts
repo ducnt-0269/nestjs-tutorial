@@ -14,6 +14,7 @@ import {
   vi,
 } from 'vitest';
 
+import { validate } from '../../config/env.validation.js';
 import { ProfilesModule } from '../../modules/profiles/profiles.module.js';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
@@ -26,7 +27,7 @@ describe('error contract, paths no module owns', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [
-        ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }),
+        ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true, validate }),
         CommonModule,
         PrismaModule,
         ProfilesModule,

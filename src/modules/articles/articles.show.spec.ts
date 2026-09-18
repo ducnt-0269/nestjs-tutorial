@@ -15,6 +15,7 @@ import {
 } from 'vitest';
 
 import { CommonModule } from '../../common/common.module.js';
+import { validate } from '../../config/env.validation.js';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 
@@ -47,7 +48,7 @@ describe('GET /api/articles/:slug', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [
-        ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }),
+        ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true, validate }),
         CommonModule,
         PrismaModule,
         // No AuthModule: the route carries no guard, so no strategy is needed.

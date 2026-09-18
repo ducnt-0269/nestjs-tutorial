@@ -16,14 +16,13 @@ import {
 } from 'vitest';
 
 import { CommonModule } from '../../common/common.module.js';
+import { validate } from '../../config/env.validation.js';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { TokenRevocationService } from '../auth/token-revocation.service.js';
 
 import { ArticlesModule } from './articles.module.js';
-
-const secret = 'test-secret-'.padEnd(32, 'x');
 
 const slug = 'how-to-train-your-dragon-a3f91c7d';
 
@@ -56,11 +55,7 @@ describe('DELETE /api/articles/:slug', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          ignoreEnvFile: true,
-          load: [() => ({ JWT_SECRET: secret, JWT_TTL_SECONDS: 3600 })],
-        }),
+        ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true, validate }),
         CommonModule,
         PrismaModule,
         AuthModule,

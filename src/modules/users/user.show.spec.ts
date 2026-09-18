@@ -16,6 +16,7 @@ import {
 } from 'vitest';
 
 import { CommonModule } from '../../common/common.module.js';
+import { validate } from '../../config/env.validation.js';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AuthModule } from '../auth/auth.module.js';
@@ -23,7 +24,6 @@ import { TokenRevocationService } from '../auth/token-revocation.service.js';
 
 import { UsersModule } from './users.module.js';
 
-const secret = 'test-secret-'.padEnd(32, 'x');
 const storedUser = {
   id: 42,
   email: 'jake@example.com',
@@ -42,11 +42,7 @@ describe('GET /api/user', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          ignoreEnvFile: true,
-          load: [() => ({ JWT_SECRET: secret, JWT_TTL_SECONDS: 3600 })],
-        }),
+        ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true, validate }),
         CommonModule,
         PrismaModule,
         // Registers the strategy; the route itself belongs to users.
