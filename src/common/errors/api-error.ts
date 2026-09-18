@@ -10,7 +10,12 @@ export interface ErrorsBody {
   errors: Record<string, string[]>;
 }
 
-export type Resource = 'user' | 'profile' | 'article' | 'comment';
+export type Resource =
+  | 'user'
+  | 'profile'
+  | 'article'
+  | 'comment'
+  | 'attachment';
 
 export function errorsBody(errors: Record<string, string[]>): ErrorsBody {
   return { errors };

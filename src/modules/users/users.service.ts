@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { invalidToken } from '../../common/errors/api-error.js';
+import { invalidToken, notFound } from '../../common/errors/api-error.js';
 import { AttachmentOwner, type User } from '../../generated/prisma/client.js';
 import { isRowGone } from '../../prisma/prisma-errors.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
@@ -98,6 +98,31 @@ export class UsersService {
       if (isRowGone(error)) throw invalidToken();
       throw error;
     }
+  }
+
+  // The account holds one avatar, so the caller needs no identifier to name it:
+  // the token already says which account, and that is this module's knowledge.
+  async removeAvatar(userId: number): Promise<void> {
+    const owner = { ownerType: AttachmentOwner.User, ownerId: userId };
+
+    const removed = await this.prismaService.$transaction(async (tx) => {
+      const removed = await this.attachmentsService.deleteFor(tx, owner);
+
+      // Nothing held, nothing to answer with. Thrown inside the transaction so
+      // the column below is left alone.
+      if (removed.length === 0) {
+        throw notFound('attachment');
+      }
+
+      // The column goes with the file. A response that left it pointing at a
+      // removed object would be this request's own half-applied state, which is
+      // not the same as a client having put an arbitrary URL there itself.
+      await tx.user.update({ where: { id: userId }, data: { image: null } });
+
+      return removed;
+    });
+
+    await this.clearStale(removed);
   }
 
   // A failure here leaves an unreferenced object without making the committed

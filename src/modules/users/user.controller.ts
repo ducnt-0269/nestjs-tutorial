@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Post,
   Put,
   SerializeOptions,
@@ -10,6 +12,8 @@ import {
 import {
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -19,7 +23,7 @@ import {
 import { Authenticated } from '../../common/decorators/authenticated.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { NoStore } from '../../common/decorators/no-store.decorator.js';
-import { fieldBody } from '../../common/errors/api-error.js';
+import { fieldBody, notFoundBody } from '../../common/errors/api-error.js';
 import {
   INVALID_MESSAGE,
   TAKEN_MESSAGE,
@@ -80,6 +84,17 @@ export class UserController {
     );
 
     return { ...user, token: caller.token };
+  }
+
+  @Delete('image')
+  @Authenticated()
+  // Nothing is left to answer with once the file is gone.
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Remove the signed-in account avatar' })
+  @ApiNoContentResponse()
+  @ApiNotFoundResponse({ schema: { example: notFoundBody('attachment') } })
+  removeImage(@CurrentUser() caller: Express.User): Promise<void> {
+    return this.usersService.removeAvatar(caller.id);
   }
 
   @Put()
