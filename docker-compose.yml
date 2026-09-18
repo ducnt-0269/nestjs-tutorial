@@ -17,6 +17,26 @@ services:
       timeout: 5s
       retries: 10
 
+  # A database of its own for the end-to-end suite, so a run can empty every
+  # table without touching the one the development server is using.
+  postgres-test:
+    image: postgres:17-alpine
+    container_name: nestjs-tutorial-postgres-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_TEST_DB:-nestjs_tutorial_test}
+    ports:
+      - '127.0.0.1:5433:5432'
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_TEST_DB:-nestjs_tutorial_test}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   redis:
     image: redis:7-alpine
     container_name: nestjs-tutorial-redis
@@ -78,5 +98,6 @@ services:
 
 volumes:
   postgres-data:
+  postgres-test-data:
   redis-data:
   minio-data:

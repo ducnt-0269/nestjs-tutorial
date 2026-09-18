@@ -16,6 +16,7 @@ nvm use
 npm install
 cp .env.example .env
 docker compose up -d          # PostgreSQL 17 + Redis 7 + MinIO (bucket tạo tự động)
+                              # kèm một PostgreSQL thứ hai ở cổng 5433 cho end-to-end test
 npm run db:generate           # sinh Prisma Client
 npm run start:dev
 ```
@@ -43,6 +44,7 @@ MinIO Console: <http://localhost:9001> (đăng nhập bằng `S3_ACCESS_KEY` / `
 | `npm run build` | Biên dịch sang `dist/` |
 | `npm test` | Unit test (Vitest) |
 | `npm run test:cov` | Unit test kèm coverage |
+| `npm run test:e2e` | End-to-end test chạy trên database thật, cần `docker compose up -d` |
 | `npm run typecheck` | `tsc --noEmit`, không sinh file |
 | `npm run lint` | oxlint |
 | `npm run format` | Oxfmt, ghi đè file và tự động sắp xếp import |
