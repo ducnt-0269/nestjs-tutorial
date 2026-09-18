@@ -90,3 +90,32 @@ model ArticleTag {
   @@index([tagId])
   @@map("article_tags")
 }
+
+enum AttachmentOwner {
+  User
+
+  @@map("attachment_owner")
+}
+
+enum AttachmentVisibility {
+  public
+  private
+
+  @@map("attachment_visibility")
+}
+
+model Attachment {
+  id         String               @id @default(uuid(7))
+  ownerType  AttachmentOwner      @map("owner_type")
+  ownerId    Int                  @map("owner_id")
+  visibility AttachmentVisibility
+  objectKey  String               @map("object_key")
+  fileName   String               @map("file_name")
+  fileType   String               @map("file_type")
+  fileSize   Int                  @map("file_size")
+  createdAt  DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([ownerType, ownerId])
+  @@map("attachments")
+}
