@@ -14,6 +14,7 @@ import {
   vi,
 } from 'vitest';
 
+import { validate } from '../../config/env.validation.js';
 import { Prisma } from '../../generated/prisma/client.js';
 import { AuthModule } from '../../modules/auth/auth.module.js';
 import { TokenRevocationService } from '../../modules/auth/token-revocation.service.js';
@@ -22,8 +23,6 @@ import { UsersModule } from '../../modules/users/users.module.js';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { CommonModule } from '../common.module.js';
-
-const secret = 'test-secret-'.padEnd(32, 'x');
 
 // adapter-pg reports the violated index instead of the target field.
 function uniqueViolation(): Error {
@@ -47,11 +46,7 @@ describe('error contract', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          ignoreEnvFile: true,
-          load: [() => ({ JWT_SECRET: secret, JWT_TTL_SECONDS: 3600 })],
-        }),
+        ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true, validate }),
         CommonModule,
         PrismaModule,
         AuthModule,
