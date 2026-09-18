@@ -20,6 +20,7 @@ Script cụ thể được định nghĩa trong `package.json`.
 | `npm run format:check` | Kiểm tra formatting của TypeScript trong `src/` |
 | `npm run format` | Ghi lại formatting và tự động sắp xếp import bằng Oxfmt |
 | `npm test` | Chạy test suite bằng Vitest |
+| `npm run test:e2e` | Chạy end-to-end test trên database riêng; cần container đang chạy |
 | `npm run build` | Kiểm tra application build |
 
 ## 2. Naming và module organization
@@ -31,7 +32,14 @@ Script cụ thể được định nghĩa trong `package.json`.
   `.interceptor.ts`, `.filter.ts`, `.pipe.ts`.
 - Zod schema dùng suffix **`.schema.ts`**. Type của dữ liệu đã validate lấy bằng `z.infer`
   và khai cùng schema, tránh định nghĩa lại shape ở service.
-- Test dùng suffix **`.spec.ts`**, đặt cạnh code được test.
+- Unit test dùng suffix **`.spec.ts`**, đặt cạnh code được test. Mọi dependency ngoài
+  process đều được thay bằng test double, nên `npm test` chạy được khi không có container nào.
+- End-to-end test dùng suffix **`.e2e-spec.ts`**, cũng đặt cạnh code, boot application thật
+  và gọi HTTP vào database riêng. Chạy bằng config riêng, `npm test` không quét tới.
+- Helper dùng chung giữa nhiều suite dùng suffix **`.fixture.ts`** để `nest build` loại ra.
+  Helper của một module đặt trong thư mục module đó; helper không thuộc module nào — boot
+  application, dọn database, tạo tài khoản — đặt trong `src/testing/`, thư mục này bị loại
+  khỏi build.
 - Mỗi file dưới 200 dòng. Khi vượt giới hạn, tách theo trách nhiệm.
 - Mỗi module có một thư mục. Cross-module dependency tuân theo module boundaries trong
   tài liệu system architecture.
