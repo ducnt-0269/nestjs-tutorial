@@ -1,5 +1,6 @@
 import { UnprocessableEntityException } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
+
 import { validationExceptionFactory } from './validation-exception.factory.js';
 
 describe('validationExceptionFactory', () => {

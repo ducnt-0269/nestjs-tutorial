@@ -1,8 +1,11 @@
 import { randomUUID } from 'node:crypto';
+
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+
 import { invalidCredentials } from '../../common/errors/api-error.js';
 import { type UserWithToken, UsersService } from '../users/users.service.js';
+
 import type { LoginInput, RegisterInput } from './auth.schema.js';
 
 // Issues and refuses tokens. Storing and checking a password belongs to the

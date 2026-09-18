@@ -1,10 +1,12 @@
 import { z } from 'zod';
+
 import {
   BLANK_MESSAGE,
   INVALID_MESSAGE,
 } from '../../common/errors/messages.js';
 import { INT4_MAX } from '../../prisma/prisma.constants.js';
 import { publicProfileSchema } from '../users/users.schema.js';
+
 import { DEFAULT_LIMIT, MAX_LIMIT } from './articles.constants.js';
 
 // One rule for all three content fields: present, and not whitespace alone.

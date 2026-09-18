@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+
 import { invalidToken } from '../errors/api-error.js';
 
 export const TOKEN_SCHEME = 'Token';

@@ -7,6 +7,11 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Response } from 'express';
+
+import {
+  isUniqueViolation,
+  violatedColumn,
+} from '../../prisma/prisma-errors.js';
 import {
   type ErrorsBody,
   fieldBody,
@@ -14,10 +19,6 @@ import {
   requestErrorBody,
 } from '../errors/api-error.js';
 import { TAKEN_MESSAGE } from '../errors/messages.js';
-import {
-  isUniqueViolation,
-  violatedColumn,
-} from '../../prisma/prisma-errors.js';
 
 /**
  * Every error leaves the API as `{ errors: { <key>: [messages] } }`, whatever

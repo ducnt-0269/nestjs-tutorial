@@ -1,5 +1,7 @@
 import 'reflect-metadata';
+
 import { randomUUID } from 'node:crypto';
+
 import { type INestApplication, Logger } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -14,12 +16,14 @@ import {
   it,
   vi,
 } from 'vitest';
+
 import { CommonModule } from '../../common/common.module.js';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { REDIS_CLIENT } from '../../redis/redis.constants.js';
 import { RedisModule } from '../../redis/redis.module.js';
 import { UsersModule } from '../users/users.module.js';
+
 import { AuthModule } from './auth.module.js';
 
 const secret = 'test-secret-'.padEnd(32, 'x');

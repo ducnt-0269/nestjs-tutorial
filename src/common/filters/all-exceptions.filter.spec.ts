@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+
 import {
   type ArgumentsHost,
   HttpException,
@@ -7,7 +8,9 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { Prisma } from '../../generated/prisma/client.js';
+
 import { AllExceptionsFilter } from './all-exceptions.filter.js';
 
 function mockResponse(headersSent = false) {

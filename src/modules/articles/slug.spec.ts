@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { slugFor } from './slug.js';
 
 describe('slugFor', () => {

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+
 import { forbidden, notFound } from '../../common/errors/api-error.js';
 // Imported by name rather than relied on: TypeScript ships a global Comment
 // from the DOM library, and taking that one keeps the typecheck green while
@@ -9,6 +10,7 @@ import { INT4_MAX } from '../../prisma/prisma.constants.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { ArticlesService } from '../articles/articles.service.js';
 import type { SafeUser } from '../users/users.service.js';
+
 import type { CreateCommentInput } from './comments.schema.js';
 
 export type CommentWithAuthor = Comment & { author: SafeUser };

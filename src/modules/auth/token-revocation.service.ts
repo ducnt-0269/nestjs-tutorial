@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
+
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+
 import { RedisService } from '../../redis/redis.service.js';
 
 @Injectable()

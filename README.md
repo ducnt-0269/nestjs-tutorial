@@ -40,8 +40,8 @@ API docs (Scalar): <http://localhost:3000/api/docs>
 | `npm run test:cov` | Unit test kèm coverage |
 | `npm run typecheck` | `tsc --noEmit`, không sinh file |
 | `npm run lint` | oxlint |
-| `npm run format` | Prettier, ghi đè file |
-| `npm run format:check` | Prettier, chỉ kiểm tra — đây là bản CI chạy |
+| `npm run format` | Oxfmt, ghi đè file và tự động sắp xếp import |
+| `npm run format:check` | Oxfmt, chỉ kiểm tra — đây là bản CI chạy |
 | `npm run lint:sun` | Sunlint — bắt buộc 0 error trước khi mở pull request |
 | `npm run lint:sun:pr` | Sunlint chỉ trên file đã đổi |
 | `npm run lint:sun:report` | Xuất `sunlint-report.json` làm bằng chứng đính kèm PR |

@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
+
 import { forbidden, notFound } from '../../common/errors/api-error.js';
 import { type Article, Prisma } from '../../generated/prisma/client.js';
 import { isRowGone, isUniqueViolation } from '../../prisma/prisma-errors.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { SafeUser } from '../users/users.service.js';
+
 import type {
   CreateArticleInput,
   ListArticlesQuery,

@@ -3,7 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import type { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+
 import { TOKEN_SCHEME } from '../../common/guards/jwt-auth.guard.js';
+
 import { TokenRevocationService } from './token-revocation.service.js';
 
 // Reused inside validate: passport hands over the decoded payload only.
